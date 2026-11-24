@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LY FIXMAN - ລະບົບ Cloud ສ້ອມແປງອຸປະກອນໄອທີ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for PNG receipt export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Typography: Phetsarath OT + Times New Roman */
+        @font-face {
+            font-family: 'Phetsarath OT';
+            src: local('Phetsarath OT'), local('PhetsarathOT'), local('Saysettha OT'), local('SaysetthaOT');
+            font-weight: 100 900;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        body, input, select, textarea, button, table, th, td, div, span, p, h1, h2, h3, h4, label {
+            font-family: 'Phetsarath OT', 'Times New Roman', serif;
+        }
+
+        body {
+            background-color: #eef2f1;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            color: #111827;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 540px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #f8faf9;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+
+        #pdf-preview-content, #pdf-preview-content * {
+            font-family: 'Phetsarath OT', 'Times New Roman', serif;
+            box-sizing: border-box;
+        }
+
+        button, [role="button"], .cursor-pointer {
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #pdf-preview-content, #pdf-preview-content * {
+                visibility: visible;
+            }
+            #pdf-preview-content {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="app-shell flex flex-col justify-between min-h-screen">
+        <!-- 1. TOP HEADER BAR -->
+        <header class="bg-white border-b border-gray-200/80 px-4 py-3 flex justify-between items-center sticky top-0 z-30 gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+                <!-- Left green-and-gold rounded-square 'LY' badge or uploaded shop logo -->
+                <div class="w-11 h-11 rounded-xl bg-[#0f5c41] border-2 border-[#f5b82e] flex items-center justify-center text-[#f5b82e] font-bold text-sm overflow-hidden shrink-0 shadow-sm">
+                    <img id="header-shop-logo" src="" alt="ໂລໂກ້ຮ້ານ" class="w-full h-full object-cover hidden pointer-events-none">
+                    <span id="header-shop-logo-fallback" class="tracking-wide pointer-events-none">LY</span>
+                </div>
+                <div class="min-w-0">
+                    <h1 id="header-shop-name" class="font-bold text-[#0f5c41] text-base leading-tight truncate">LY FIXMAN</h1>
+                    <p class="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5 truncate">
+                        <span id="cloud-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block shrink-0"></span>
+                        <span id="cloud-status-text" class="truncate">ພ້ອມໃຊ້ງານ (0)</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right circular refresh button and settings gear button -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" data-action="sync-pull" class="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#0f5c41] hover:bg-emerald-100 active:scale-95 transition" title="ຊິ້ງຂໍ້ມູນ">
+                    <i class="fa-solid fa-rotate text-sm pointer-events-none"></i>
+                </button>
+                <button type="button" data-action="nav-settings" class="w-9 h-9 rounded-full bg-gray-100 border border-gray-200/80 flex items-center justify-center text-gray-700 hover:bg-gray-200 active:scale-95 transition" title="ຕັ້ງຄ່າ">
+                    <i class="fa-solid fa-gear text-sm pointer-events-none"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Toast notification -->
+        <div id="toast-msg" class="fixed top-16 left-1/2 -translate-x-1/2 bg-gray-900/95 text-white text-xs sm:text-sm px-4 py-2 rounded-full shadow-lg z-50 transition-opacity duration-300 opacity-0 pointer-events-none text-center max-w-[90vw]">
+            ບັນທຶກຂໍ້ມູນສຳເລັດ
+        </div>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="flex-1 px-4 pt-3.5 pb-28 space-y-4">
+            <!-- VIEW 1: DASHBOARD ('ໜ້າຫຼັກ') -->
+            <section id="tab-home" class="space-y-4">
+                <!-- Dark Emerald Green Hero Card (#0f5c41) -->
+                <div class="bg-[#0f5c41] rounded-2xl p-4 text-white shadow-md">
+                    <div class="mb-3.5">
+                        <h2 class="text-base sm:text-lg font-bold text-[#f5b82e] flex items-center gap-1.5">
+                            <span id="hero-shop-title">LY FIXMAN</span>
+                            <span>👋</span>
+                        </h2>
+                        <p id="hero-shop-subtitle" class="text-white/95 text-xs mt-0.5">ລະບົບ Cloud ສ້ອມແປງອຸປະກອນໄອທີ</p>
+                    </div>
+
+                    <!-- 2x2 semi-transparent stat boxes -->
+                    <div class="grid grid-cols-2 gap-2.5 text-center">
+                        <div class="bg-white/10 border border-white/15 rounded-xl py-2.5 px-2">
+                            <span class="text-[11px] text-emerald-100/90 block">ຍອດໃນເດືອນ</span>
+                            <span id="dash-month-total" class="text-sm sm:text-base font-bold text-[#f5b82e] block mt-0.5">₭ 0</span>
+                        </div>
+                        <div class="bg-white/10 border border-white/15 rounded-xl py-2.5 px-2">
+                            <span class="text-[11px] text-emerald-100/90 block">ມັດຈຳ</span>
+                            <span id="dash-deposit-total" class="text-sm sm:text-base font-bold text-[#f5b82e] block mt-0.5">₭ 0</span>
+                        </div>
+                        <div class="bg-white/10 border border-white/15 rounded-xl py-2.5 px-2">
+                            <span class="text-[11px] text-emerald-100/90 block">ຄ້າງຊຳລະ</span>
+                            <span id="dash-unpaid-total" class="text-sm sm:text-base font-bold text-rose-300 block mt-0.5">₭ 0</span>
+                        </div>
+                        <div class="bg-white/10 border border-white/15 rounded-xl py-2.5 px-2">
+                            <span class="text-[11px] text-emerald-100/90 block">ຍອດໃນປີ</span>
+                            <span id="dash-year-total" class="text-sm sm:text-base font-bold text-emerald-200 block mt-0.5">₭ 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 'ສ້າງເອກະສານໄວ' (Quick Create) -->
+                <div class="space-y-2">
+                    <h3 class="text-xs sm:text-sm font-bold text-gray-800">ສ້າງເອກະສານໄວ</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Left card: solid emerald green #0f5c41 + yellow document icon + 'ໃບແຈ້ງລາຄາ' -->
+                        <button type="button" data-action="quick-create" data-doc-type="ໃບແຈ້ງລາຄາ" class="bg-[#0f5c41] hover:bg-[#0c4b35] text-white rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 transition">
+                            <i class="fa-solid fa-file-invoice-dollar text-2xl text-[#f5b82e] pointer-events-none"></i>
+                            <span class="text-xs sm:text-sm font-bold pointer-events-none">ໃບແຈ້ງລາຄາ</span>
+                        </button>
+
+                        <!-- Right card: clean white card with border + orange wrench icon + 'ໃບຮັບສ້ອມ' -->
+                        <button type="button" data-action="quick-create" data-doc-type="ໃບຮັບສ້ອມ" class="bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 rounded-2xl py-5 px-3 flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 transition">
+                            <i class="fa-solid fa-wrench text-2xl text-amber-500 pointer-events-none"></i>
+                            <span class="text-xs sm:text-sm font-bold pointer-events-none">ໃບຮັບສ້ອມ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 'ເອກະສານຫຼ້າສຸດ' (Recent Documents) -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs sm:text-sm font-bold text-gray-800">ເອກະສານຫຼ້າສຸດ</h3>
+                        <button type="button" data-action="nav-docs" class="text-xs font-bold text-[#0f5c41] hover:underline">
+                            <span class="pointer-events-none">ເບິ່ງທັງໝົດ</span>
+                        </button>
+                    </div>
+
+                    <!-- Horizontal scrollable filter pills -->
+                    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                        <button type="button" data-action="filter-home-status" data-status="ທັງໝົດ" class="home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-[#0f5c41] text-white shadow-sm">ທັງໝົດ</button>
+                        <button type="button" data-action="filter-home-status" data-status="ສັ່ງເຄື່ອງ" class="home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200">ສັ່ງເຄື່ອງ</button>
+                        <button type="button" data-action="filter-home-status" data-status="ກຳລັງດຳເນີນການ" class="home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200">ກຳລັງດຳເນີນການ</button>
+                        <button type="button" data-action="filter-home-status" data-status="ລໍຖ້າອາໄຫຼ່" class="home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200">ລໍຖ້າອາໄຫຼ່</button>
+                        <button type="button" data-action="filter-home-status" data-status="ສຳເລັດ" class="home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200">ສຳເລັດ</button>
+                    </div>
+
+                    <!-- Recent documents container -->
+                    <div id="home-recent-list" class="space-y-2.5"></div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: ALL DOCUMENTS ('ເອກະສານ') -->
+            <section id="tab-docs" class="hidden space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="text-sm font-bold text-[#0f5c41]">ເອກະສານທັງໝົດ</h2>
+                    <button type="button" data-action="new-doc" class="bg-[#0f5c41] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">
+                        <i class="fa-solid fa-plus mr-1 pointer-events-none"></i><span class="pointer-events-none">ສ້າງໃໝ່</span>
+                    </button>
+                </div>
+
+                <!-- Type filter tabs -->
+                <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+                    <button type="button" data-action="filter-docs-type" data-type="ທັງໝົດ" class="docs-type-pill px-3 py-1 rounded-full text-xs font-bold bg-[#0f5c41] text-white whitespace-nowrap">ທັງໝົດ</button>
+                    <button type="button" data-action="filter-docs-type" data-type="ໃບຮັບເງິນ" class="docs-type-pill px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 whitespace-nowrap">ໃບຮັບເງິນ</button>
+                    <button type="button" data-action="filter-docs-type" data-type="ໃບແຈ້ງລາຄາ" class="docs-type-pill px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 whitespace-nowrap">ໃບແຈ້ງລາຄາ</button>
+                    <button type="button" data-action="filter-docs-type" data-type="ໃບຮັບສ້ອມ" class="docs-type-pill px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 whitespace-nowrap">ໃບຮັບສ້ອມ</button>
+                </div>
+
+                <input type="text" id="search-docs" placeholder="ຄົ້ນຫາຊື່ລູກຄ້າ, ເລກທີບິນ, ອຸປະກອນ, ຊ່າງຊ້ອມ..." class="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs shadow-sm">
+
+                <div id="all-docs-list" class="space-y-2.5"></div>
+            </section>
+
+            <!-- VIEW 3: CREATE / EDIT DOCUMENT ('ສ້າງເອກະສານ') -->
+            <section id="tab-create" class="hidden space-y-3.5">
+                <!-- Document Type Selector -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-[#0f5c41]">ປະເພດເອກະສານ</label>
+                        <span id="editor-doc-badge" class="text-xs font-bold text-[#0f5c41] bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">REC-0001</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" id="btn-type-receipt" data-action="select-doc-type" data-doc-type="ໃບຮັບເງິນ" class="doc-type-btn py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition border-[#0f5c41] bg-emerald-50 text-[#0f5c41] shadow-sm">
+                            <i class="fa-solid fa-receipt text-amber-600 pointer-events-none"></i>
+                            <span class="pointer-events-none">ໃບຮັບເງິນ</span>
+                        </button>
+                        <button type="button" id="btn-type-quote" data-action="select-doc-type" data-doc-type="ໃບແຈ້ງລາຄາ" class="doc-type-btn py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition border-gray-200 bg-white text-gray-700">
+                            <i class="fa-solid fa-file-invoice-dollar text-amber-500 pointer-events-none"></i>
+                            <span class="pointer-events-none">ໃບແຈ້ງລາຄາ</span>
+                        </button>
+                        <button type="button" id="btn-type-repair" data-action="select-doc-type" data-doc-type="ໃບຮັບສ້ອມ" class="doc-type-btn py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition border-gray-200 bg-white text-gray-700">
+                            <i class="fa-solid fa-wrench text-amber-600 pointer-events-none"></i>
+                            <span class="pointer-events-none">ໃບຮັບສ້ອມ</span>
+                        </button>
+                    </div>
+
+                    <!-- Dedicated 'ຊ່າງຮັບງານ' button shown ONLY when 'ໃບຮັບສ້ອມ' is active -->
+                    <div id="repair-tech-action-bar" class="hidden pt-2.5 mt-1 border-t border-amber-200 bg-amber-50/80 rounded-xl p-3 flex items-center justify-between gap-2.5">
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-amber-950">ບັນທຶກຂໍ້ມູນຝ່າຍຊ່າງ</p>
+                            <p id="repair-tech-summary-badge" class="text-[11px] text-amber-900/80 truncate mt-0.5">ຍັງບໍ່ທັນໄດ້ມອບໝາຍຊ່າງຊ້ອມ</p>
+                        </div>
+                        <button type="button" id="btn-open-tech-modal" data-action="open-tech-intake" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2.5 rounded-xl font-bold text-xs shadow active:scale-95 transition shrink-0 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-gear pointer-events-none"></i>
+                            <span class="pointer-events-none">ຊ່າງຮັບງານ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Document Metadata -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-[#0f5c41] flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-lines text-[#0f5c41] pointer-events-none"></i>
+                        <span>ຂໍ້ມູນເອກະສານ</span>
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label for="doc-id-input" class="text-[11px] font-bold text-gray-600 block mb-1">ເລກທີບິນ</label>
+                            <input type="text" id="doc-id-input" value="REC-0001" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs font-bold text-[#0f5c41]">
+                        </div>
+                        <div>
+                            <label for="doc-date-input" class="text-[11px] font-bold text-gray-600 block mb-1">ວັນທີ</label>
+                            <input type="text" id="doc-date-input" placeholder="ວວ/ດດ/ປປປປ" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label for="doc-currency" class="text-[11px] font-bold text-gray-600 block mb-1">ສະກຸນເງິນ</label>
+                            <select id="doc-currency" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs font-bold">
+                                <option value="฿">ບາດ (฿)</option>
+                                <option value="₭">ກີບ (₭)</option>
+                                <option value="$">ໂດລາ ($)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Info -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-[#0f5c41] flex items-center gap-1.5">
+                        <i class="fa-solid fa-user text-[#0f5c41] pointer-events-none"></i>
+                        <span>ຂໍ້ມູນລູກຄ້າ</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label for="cust-name" class="text-[11px] font-bold text-gray-600 block mb-1">ຊື່ລູກຄ້າ</label>
+                            <input type="text" id="cust-name" placeholder="ຕົວຢ່າງ: ນາງ ຄຳຝ້າຍ" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label for="cust-phone" class="text-[11px] font-bold text-gray-600 block mb-1">ເບີໂທ</label>
+                            <input type="text" id="cust-phone" placeholder="ຕົວຢ່າງ: 020 93627874" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label for="cust-address" class="text-[11px] font-bold text-gray-600 block mb-1">ທີ່ຢູ່</label>
+                            <input type="text" id="cust-address" placeholder="ຕົວຢ່າງ: ບ້ານວັງພັນສີ" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label for="cust-messenger" class="text-[11px] font-bold text-gray-600 block mb-1">FB / Messenger</label>
+                            <input type="text" id="cust-messenger" placeholder="ຊື່ເຟສບຸກລູກຄ້າ (ຖ້າມີ)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device & Warranty Info -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-amber-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-laptop-medical text-amber-600 pointer-events-none"></i>
+                        <span>ຂໍ້ມູນອຸປະກອນຊ່ອມ &amp; ປະກັນ</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label for="device-name" class="text-[11px] font-bold text-gray-600 block mb-1">ຊື່ອຸປະກອນ / ລຸ້ນ</label>
+                            <input type="text" id="device-name" placeholder="ຕົວຢ່າງ: Acer, Asus, iPhone..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label for="device-sn" class="text-[11px] font-bold text-gray-600 block mb-1">ເລກເຄື່ອງ (SN)</label>
+                            <input type="text" id="device-sn" placeholder="Serial Number (ຖ້າມີ)" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label for="device-symptom" class="text-[11px] font-bold text-gray-600 block mb-1">ອາການເສຍ / ລາຍລະອຽດ</label>
+                            <input type="text" id="device-symptom" placeholder="ຕົວຢ່າງ: ຄີບອດຖືກນ້ຳ, ເປີດບໍ່ຕິດ..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label for="device-warranty" class="text-[11px] font-bold text-gray-600 block mb-1">ການຮັບປະກັນ</label>
+                            <select id="device-warranty" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                                <option value="ບໍ່ມີປະກັນ">ບໍ່ມີປະກັນ</option>
+                                <option value="ຮັບປະກັນ 7 ວັນ">ຮັບປະກັນ 7 ວັນ</option>
+                                <option value="ຮັບປະກັນ 15 ວັນ">ຮັບປະກັນ 15 ວັນ</option>
+                                <option value="ຮັບປະກັນ 30 ວັນ (1 ເດືອນ)" selected>ຮັບປະກັນ 30 ວັນ (1 ເດືອນ)</option>
+                                <option value="ຮັບປະກັນ 3 ເດືອນ">ຮັບປະກັນ 3 ເດືອນ</option>
+                                <option value="ຮັບປະກັນ 6 ເດືອນ">ຮັບປະກັນ 6 ເດືອນ</option>
+                                <option value="ຮັບປະກັນ 1 ປີ">ຮັບປະກັນ 1 ປີ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-[#0f5c41] flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-[#0f5c41] pointer-events-none"></i>
+                            <span>ລາຍການສິນຄ້າ / ບໍລິການ</span>
+                        </h3>
+                        <button type="button" data-action="add-item" class="bg-emerald-50 hover:bg-emerald-100 text-[#0f5c41] border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition">
+                            <i class="fa-solid fa-plus mr-1 pointer-events-none"></i><span class="pointer-events-none">ເພີ່ມລາຍການ</span>
+                        </button>
+                    </div>
+                    <div id="items-container" class="space-y-2"></div>
+                </div>
+
+                <!-- Summary & Calculation -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-[#0f5c41] flex items-center gap-1.5">
+                        <i class="fa-solid fa-calculator text-[#0f5c41] pointer-events-none"></i>
+                        <span>ສະຫຼຸບຍອດເງິນ</span>
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label for="calc-discount" class="text-[11px] font-bold text-gray-600 block mb-1">ສ່ວນຫຼຸດ</label>
+                            <input type="text" inputmode="decimal" id="calc-discount" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs text-right">
+                        </div>
+                        <div id="exchange-rate-box">
+                            <label id="exchange-rate-label" for="calc-exchange-rate" class="text-[11px] font-bold text-gray-600 block mb-1">ອັດຕາແລກປ່ຽນ (1 ฿)</label>
+                            <input type="text" inputmode="decimal" id="calc-exchange-rate" value="680" placeholder="680" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs text-right">
+                        </div>
+                        <div>
+                            <label for="calc-deposit" class="text-[11px] font-bold text-gray-600 block mb-1">ເງິນມັດຈຳ (ກີບ)</label>
+                            <input type="text" inputmode="decimal" id="calc-deposit" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs text-right">
+                        </div>
+                    </div>
+
+                    <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3 space-y-1 text-xs">
+                        <div class="flex justify-between text-gray-700">
+                            <span>ຍອດລວມ:</span>
+                            <span id="calc-subtotal" class="font-bold">฿ 0</span>
+                        </div>
+                        <div class="flex justify-between text-[#0f5c41] font-bold text-sm">
+                            <span>ລວມທັງໝົດ:</span>
+                            <span id="calc-total">฿ 0</span>
+                        </div>
+                        <div id="calc-lak-row" class="flex justify-between text-blue-700 font-bold">
+                            <span>ລວມເປັນເງິນກີບ:</span>
+                            <span id="calc-total-lak">₭ 0</span>
+                        </div>
+                        <div class="flex justify-between text-rose-700 font-bold border-t border-emerald-200 pt-1 mt-1">
+                            <span>ຍອດຄ້າງຊຳລະ:</span>
+                            <span id="calc-balance">₭ 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Primary Action Buttons -->
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
+                    <button type="button" data-action="open-preview" class="bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-2xl font-bold text-xs sm:text-sm shadow flex items-center justify-center gap-1.5 active:scale-95 transition">
+                        <i class="fa-solid fa-eye pointer-events-none"></i>
+                        <span class="pointer-events-none">ເບິ່ງໃບບິນ</span>
+                    </button>
+                    <button type="button" data-action="save-doc" class="bg-[#0f5c41] hover:bg-[#0c4b35] text-white py-3 rounded-2xl font-bold text-xs sm:text-sm shadow flex items-center justify-center gap-1.5 active:scale-95 transition">
+                        <i class="fa-solid fa-floppy-disk pointer-events-none"></i>
+                        <span class="pointer-events-none">ບັນທຶກເອກະສານ</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- VIEW 4: SETTINGS ('ຕັ້ງຄ່າ') -->
+            <section id="tab-settings" class="hidden space-y-4">
+                <h2 class="text-sm font-bold text-[#0f5c41]">ຕັ້ງຄ່າຮ້ານ ແລະ ລະບົບຊິ້ງຂໍ້ມູນ</h2>
+
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-[#0f5c41]">ຂໍ້ມູນຮ້ານ LY FIXMAN</h3>
+                    <div>
+                        <label for="shop-name" class="text-[11px] font-bold text-gray-600 block mb-1">ຊື່ຮ້ານ</label>
+                        <input type="text" id="shop-name" placeholder="LY FIXMAN" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label for="shop-tagline" class="text-[11px] font-bold text-gray-600 block mb-1">ຄຳອະທິບາຍຮ້ານ</label>
+                        <input type="text" id="shop-tagline" placeholder="ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div>
+                        <label for="shop-address" class="text-[11px] font-bold text-gray-600 block mb-1">ທີ່ຢູ່ຮ້ານ</label>
+                        <input type="text" id="shop-address" placeholder="ບ້ານມະນີວົງໄຊ ເມືອງອຸທຸມພອນ ແຂວງສະຫວັນນະເຂດ" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="shop-phone" class="text-[11px] font-bold text-gray-600 block mb-1">ເບີໂທຮ້ານ</label>
+                            <input type="text" id="shop-phone" placeholder="020 96397797" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                        <div>
+                            <label for="shop-fb" class="text-[11px] font-bold text-gray-600 block mb-1">ຊື່ Facebook</label>
+                            <input type="text" id="shop-fb" placeholder="Ly soukpasert" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        </div>
+                    </div>
+
+                    <!-- Logo Uploader -->
+                    <div class="pt-2 border-t border-gray-100 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-bold text-gray-700">ໂລໂກ້ຮ້ານ (Logo)</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="pick-logo" class="bg-emerald-50 hover:bg-emerald-100 text-[#0f5c41] border border-emerald-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                                    <span class="pointer-events-none">ເລືອກຮູບໂລໂກ້</span>
+                                </button>
+                                <button type="button" data-action="clear-logo" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                                    <span class="pointer-events-none">ລຶບ</span>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="shop-logo-input" accept="image/*" class="hidden">
+                        <img id="shop-logo-preview" src="" alt="ຕົວຢ່າງໂລໂກ້" class="w-16 h-16 rounded-full object-cover border-2 border-[#f5b82e] hidden">
+                    </div>
+
+                    <!-- Payment QR Uploader -->
+                    <div class="pt-2 border-t border-gray-100 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-xs font-bold text-gray-700">ຄິວອາໂຄ້ດຊຳລະເງິນ (QR Code)</span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" data-action="pick-qr" class="bg-emerald-50 hover:bg-emerald-100 text-[#0f5c41] border border-emerald-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                                    <span class="pointer-events-none">ເລືອກຮູບ QR</span>
+                                </button>
+                                <button type="button" data-action="clear-qr" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                                    <span class="pointer-events-none">ລຶບ</span>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="shop-qr-input" accept="image/*" class="hidden">
+                        <img id="shop-qr-preview" src="" alt="ຕົວຢ່າງ QR Code" class="w-24 h-24 object-contain border border-gray-200 rounded-xl bg-white p-1 hidden">
+                    </div>
+
+                    <button type="button" data-action="save-shop" class="w-full bg-[#0f5c41] hover:bg-[#0c4b35] text-white py-2.5 rounded-xl font-bold text-xs shadow">
+                        <span class="pointer-events-none">ບັນທຶກຂໍ້ມູນຮ້ານ</span>
+                    </button>
+                </div>
+
+                <!-- Google Sheets Web App URL Sync -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-[#0f5c41]">ເຊື່ອມຕໍ່ Google Sheets (Web App URL)</h3>
+                    <p class="text-[11px] text-gray-500">ວາງລິ້ງ Web App (/exec) ເພື່ອບັນທຶກ ແລະ ດຶງຂໍ້ມູນຮ່ວມກັນໃນ Cloud</p>
+                    <input type="url" id="gsheet-webapp-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-action="save-sync-url" class="bg-[#0f5c41] hover:bg-[#0c4b35] text-white py-2.5 rounded-xl font-bold text-xs">
+                            <span class="pointer-events-none">ບັນທຶກ &amp; ຊິ້ງຂໍ້ມູນ</span>
+                        </button>
+                        <button type="button" data-action="sync-pull" class="bg-sky-700 hover:bg-sky-800 text-white py-2.5 rounded-xl font-bold text-xs">
+                            <span class="pointer-events-none">ດຶງຂໍ້ມູນຈາກ Sheet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Local JSON Backup & Restore -->
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
+                    <h3 class="text-xs font-bold text-gray-800">ສຳຮອງ ແລະ ກູ້ຄືນຂໍ້ມູນ (JSON Backup)</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-action="export-backup" class="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold text-xs">
+                            <i class="fa-solid fa-file-export mr-1 pointer-events-none"></i><span class="pointer-events-none">ສົ່ງອອກ JSON</span>
+                        </button>
+                        <button type="button" data-action="trigger-import-backup" class="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold text-xs">
+                            <i class="fa-solid fa-file-import mr-1 pointer-events-none"></i><span class="pointer-events-none">ນຳເຂົ້າ JSON</span>
+                        </button>
+                    </div>
+                    <input type="file" id="import-backup-input" accept=".json,application/json" class="hidden">
+                </div>
+            </section>
+        </main>
+
+        <!-- FIXED BOTTOM NAVIGATION BAR (4 ITEMS WITH RAISED FLOATING '+' BUTTON) -->
+        <nav class="bg-white border-t border-gray-200 px-2 pt-1.5 pb-2 grid grid-cols-4 items-end sticky bottom-0 z-30 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
+            <!-- 1) ໜ້າຫຼັກ -->
+            <button type="button" id="nav-home" data-action="nav-home" class="flex flex-col items-center justify-center gap-1 text-[#0f5c41] font-bold py-1">
+                <i class="fa-solid fa-border-all text-lg pointer-events-none"></i>
+                <span class="text-[11px] pointer-events-none">ໜ້າຫຼັກ</span>
+            </button>
+
+            <!-- 2) ເອກະສານ -->
+            <button type="button" id="nav-docs" data-action="nav-docs" class="flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-[#0f5c41] py-1">
+                <i class="fa-solid fa-file-lines text-lg pointer-events-none"></i>
+                <span class="text-[11px] pointer-events-none">ເອກະສານ</span>
+            </button>
+
+            <!-- 3) Floating raised circular green '+' button with label 'ສ້າງໃໝ່' -->
+            <button type="button" id="nav-create" data-action="new-doc" class="flex flex-col items-center justify-center relative -mt-6 py-1 group">
+                <span class="w-12 h-12 rounded-full bg-[#0f5c41] group-hover:bg-[#0c4b35] text-white flex items-center justify-center shadow-lg border-4 border-white transition active:scale-95 pointer-events-none">
+                    <i class="fa-solid fa-plus text-xl pointer-events-none"></i>
+                </span>
+                <span id="nav-create-label" class="text-[11px] text-gray-500 mt-1 pointer-events-none">ສ້າງໃໝ່</span>
+            </button>
+
+            <!-- 4) ຕັ້ງຄ່າ -->
+            <button type="button" id="nav-settings" data-action="nav-settings" class="flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-[#0f5c41] py-1">
+                <i class="fa-solid fa-gear text-lg pointer-events-none"></i>
+                <span class="text-[11px] pointer-events-none">ຕັ້ງຄ່າ</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- TECHNICIAN INTAKE MODAL ('ຊ່າງຮັບງານ') -->
+    <div id="tech-intake-modal" class="fixed inset-0 bg-black/75 z-50 hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg mx-auto rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-amber-300">
+            <div class="p-3.5 border-b border-amber-200 flex justify-between items-center bg-amber-50">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear text-amber-800 pointer-events-none"></i>
+                    <h3 class="font-bold text-[#0f5c41] text-xs sm:text-sm">ຊ່າງຮັບງານ</h3>
+                </div>
+                <button type="button" data-action="close-tech-intake" class="text-gray-600 hover:text-gray-900 px-2 py-1">
+                    <i class="fa-solid fa-xmark text-lg pointer-events-none"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto space-y-3 text-xs">
+                <!-- 1. ອາການ (live-linked from symptom input in main form) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="tech-symptom-linked" class="text-[11px] font-bold text-amber-900">ອາການ (ລິ້ງຈາກຟອມທຳອິດ)</label>
+                        <span class="text-[10px] text-[#0f5c41] font-bold">ຊິ້ງອັດຕະໂນມັດ</span>
+                    </div>
+                    <input type="text" id="tech-symptom-linked" placeholder="ອາການຈະລິ້ງມາຈາກຟອມຂໍ້ມູນອຸປະກອນຊ່ອມ" class="w-full bg-amber-50/80 border border-amber-200 rounded-xl px-3 py-2 text-xs text-gray-900">
+                </div>
+
+                <!-- 2. ລາຍການ -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="tech-items-summary" class="text-[11px] font-bold text-[#0f5c41]">ລາຍການ</label>
+                        <button type="button" data-action="sync-tech-items-from-form" class="text-[11px] text-[#0f5c41] font-bold hover:underline">
+                            <span class="pointer-events-none">ດຶງຈາກລາຍການສ້ອມ</span>
+                        </button>
+                    </div>
+                    <textarea id="tech-items-summary" rows="3" placeholder="ລາຍລະອຽດລາຍການສ້ອມ / ອາໄຫຼ່ທີ່ຕ້ອງປ່ຽນ..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs"></textarea>
+                </div>
+
+                <!-- 3. ຊື່ຊ່າງຊ້ອມ & 4. ສະຖານະ -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                        <label for="tech-repairer-name" class="text-[11px] font-bold text-[#0f5c41] block mb-1">ຊື່ຊ່າງຊ້ອມ</label>
+                        <input type="text" id="tech-repairer-name" list="tech-repairer-suggestions" placeholder="ພິມ ຫຼື ເລືອກຊື່ຊ່າງຊ້ອມ" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs">
+                        <datalist id="tech-repairer-suggestions">
+                            <option value="ຊ່າງລີ"></option>
+                            <option value="ຊ່າງສົມ"></option>
+                            <option value="ຊ່າງຄຳ"></option>
+                        </datalist>
+                    </div>
+
+                    <div>
+                        <label for="tech-repair-status" class="text-[11px] font-bold text-[#0f5c41] block mb-1">ສະຖານະ</label>
+                        <select id="tech-repair-status" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold">
+                            <option value="ສັ່ງເຄື່ອງ">ສັ່ງເຄື່ອງ</option>
+                            <option value="ກຳລັງດຳເນີນການ">ກຳລັງດຳເນີນການ</option>
+                            <option value="ລໍຖ້າອາໄຫຼ່">ລໍຖ້າອາໄຫຼ່</option>
+                            <option value="ສຳເລັດ">ສຳເລັດ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" data-action="close-tech-intake" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2.5 rounded-xl font-bold text-xs">
+                        <span class="pointer-events-none">ປິດໜ້າຕ່າງ</span>
+                    </button>
+                    <button type="button" data-action="save-tech-intake" class="flex-1 bg-[#0f5c41] hover:bg-[#0c4b35] text-white py-2.5 rounded-xl font-bold text-xs shadow">
+                        <span class="pointer-events-none">ບັນທຶກຂໍ້ມູນຊ່າງ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLASSIC LY FIXMAN INVOICE / REPAIR SHEET PREVIEW MODAL -->
+    <div id="pdf-modal" class="fixed inset-0 bg-black/75 z-50 hidden flex flex-col justify-end sm:justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-2xl mx-auto rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-3 border-b border-gray-200 flex justify-between items-center bg-gray-50 gap-2">
+                <h3 class="font-bold text-gray-900 text-xs sm:text-sm truncate">ຕົວຢ່າງເອກະສານ</h3>
+                <div class="flex gap-1.5 shrink-0">
+                    <button type="button" data-action="print-doc" class="bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold">
+                        <i class="fa-solid fa-print mr-1 pointer-events-none"></i><span class="pointer-events-none">ພິມເອກະສານ</span>
+                    </button>
+                    <button type="button" data-action="download-png" class="bg-[#0f5c41] hover:bg-[#0c4b35] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
+                        <i class="fa-solid fa-download mr-1 pointer-events-none"></i><span class="pointer-events-none">ດາວໂຫລດຮູບ</span>
+                    </button>
+                    <button type="button" data-action="close-preview" class="text-gray-600 hover:text-gray-900 px-2 py-1">
+                        <i class="fa-solid fa-xmark text-lg pointer-events-none"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-2 sm:p-6 overflow-y-auto flex-1 bg-gray-200">
+                <div id="pdf-preview-content" class="bg-white p-3.5 sm:p-8 rounded-xl shadow text-gray-900 text-xs sm:text-sm border-t-8 border-[#0f5c41]">
+                    <!-- Header: Circular Gold-Bordered Shop Logo + Shop Details + Doc Number & Date -->
+                    <div class="flex justify-between items-start border-b border-gray-200 pb-3 mb-3 gap-2">
+                        <div class="flex items-start gap-2.5 min-w-0">
+                            <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[#0f5c41] border-2 border-[#f5b82e] flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                                <img id="pdf-shop-logo" src="" alt="ໂລໂກ້ຮ້ານ" class="w-full h-full object-cover hidden">
+                                <span id="pdf-shop-logo-fallback" class="text-[#f5b82e] font-bold text-xs sm:text-sm">LY</span>
+                            </div>
+                            <div class="min-w-0">
+                                <h2 id="pdf-shop-name" class="font-bold text-sm sm:text-xl text-[#0f5c41] leading-tight break-words">LY FIXMAN</h2>
+                                <p id="pdf-shop-subtitle" class="text-amber-600 font-bold text-[10px] sm:text-xs leading-snug">ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ</p>
+                                <p id="pdf-shop-address" class="text-gray-600 text-[10px] sm:text-xs leading-snug mt-0.5 break-words">ບ້ານມະນີວົງໄຊ ເມືອງອຸທຸມພອນ ແຂວງສະຫວັນນະເຂດ</p>
+                                <p id="pdf-shop-meta" class="text-gray-900 text-[10px] sm:text-xs font-bold leading-snug mt-0.5 break-words">Tel: 020 96397797 | FB: Ly soukpasert</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p id="pdf-doc-no" class="font-bold text-xs sm:text-base text-[#0f5c41]">REC-0001</p>
+                            <p id="pdf-doc-date" class="text-gray-600 text-[10px] sm:text-xs mt-0.5">ວັນທີ: -</p>
+                        </div>
+                    </div>
+
+                    <!-- Centered Document Title with Orange Underline -->
+                    <div class="text-center mb-3.5">
+                        <h3 id="pdf-doc-type" class="inline-block font-bold text-sm sm:text-lg text-[#0f5c41] pb-1 border-b-2 border-amber-400 px-3">ໃບຮັບເງິນ</h3>
+                    </div>
+
+                    <!-- Side-by-side Customer & Device/Warranty Box -->
+                    <div class="bg-emerald-50/40 border border-emerald-200/80 rounded-xl p-2.5 sm:p-4 mb-3.5 grid grid-cols-2 gap-2.5 sm:gap-4 text-[11px] sm:text-xs">
+                        <div class="min-w-0">
+                            <p class="text-[10px] sm:text-[11px] font-bold text-[#0f5c41] mb-0.5">ລູກຄ້າ / BILL TO</p>
+                            <p id="pdf-cust-name" class="font-bold text-xs sm:text-sm text-gray-900 break-words">-</p>
+                            <p id="pdf-cust-address" class="text-gray-600 text-[10px] sm:text-xs leading-snug mt-0.5 break-words">-</p>
+                            <p id="pdf-cust-phone" class="text-gray-900 font-bold text-[10px] sm:text-xs mt-1 break-words">Tel: -</p>
+                            <p id="pdf-cust-messenger" class="text-gray-600 text-[10px] sm:text-[11px] mt-0.5 break-words hidden"></p>
+                        </div>
+                        <div class="border-l border-emerald-200/80 pl-2.5 sm:pl-4 text-right min-w-0">
+                            <p class="text-[10px] sm:text-[11px] font-bold text-amber-600 mb-0.5">ຂໍ້ມູນອຸປະກອນຊ່ອມ &amp; ປະກັນ</p>
+                            <p id="pdf-device-name" class="font-bold text-xs sm:text-sm text-gray-900 break-words">-</p>
+                            <p id="pdf-device-sn" class="text-gray-600 text-[10px] sm:text-xs mt-0.5 break-words">SN: -</p>
+                            <p id="pdf-device-symptom" class="text-gray-600 italic text-[10px] sm:text-xs mt-0.5 break-words">ອາການ: -</p>
+                            <p class="text-[#0f5c41] font-bold text-[10px] sm:text-xs mt-1 break-words flex items-center justify-end gap-1">
+                                <i class="fa-solid fa-shield-halved text-rose-600"></i>
+                                <span id="pdf-device-warranty">ປະກັນ: -</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Line Items Table -->
+                    <div class="overflow-x-auto mb-3.5">
+                        <table class="w-full text-left border-collapse text-[11px] sm:text-xs">
+                            <thead>
+                                <tr style="background-color: #0f5132;" class="text-white">
+                                    <th class="py-1.5 px-2 font-bold rounded-tl-md">ລາຍການ / DESCRIPTION</th>
+                                    <th class="py-1.5 px-2 font-bold text-right whitespace-nowrap">ລາຄາ / PRICE</th>
+                                    <th class="py-1.5 px-2 font-bold text-center whitespace-nowrap">ຈຳນວນ</th>
+                                    <th class="py-1.5 px-2 font-bold text-right rounded-tr-md whitespace-nowrap">ລວມ / AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pdf-items-body" class="divide-y divide-gray-200 border-b border-gray-200"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Summary Box: QR Code on Left + Totals on Right -->
+                    <div class="bg-gray-50/90 border border-gray-200/80 rounded-xl p-3 sm:p-4 mb-6 flex flex-col sm:flex-row justify-between items-center sm:items-stretch gap-3 sm:gap-4">
+                        <div id="pdf-qr-box" class="hidden flex flex-col items-center justify-center shrink-0">
+                            <span class="text-[11px] sm:text-xs font-bold text-[#0f5c41] mb-1">ສະແກນຊຳລະເງິນ</span>
+                            <div class="p-1.5 bg-white border border-emerald-200 rounded-xl shadow-sm">
+                                <img id="pdf-shop-qr" src="" alt="ຄິວອາໂຄ້ດຊຳລະເງິນ" class="w-24 h-24 sm:w-28 sm:h-28 object-contain">
+                            </div>
+                        </div>
+
+                        <div class="flex-1 w-full space-y-1.5 text-[11px] sm:text-xs">
+                            <div class="flex justify-between items-center text-gray-700">
+                                <span>ຍອດລວມ:</span>
+                                <span id="pdf-subtotal" class="font-bold">฿ 0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-gray-700">
+                                <span>ສ່ວນຫຼຸດ:</span>
+                                <span id="pdf-discount" class="font-bold">฿ 0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs sm:text-base font-bold text-[#0f5c41] pt-1">
+                                <span>ລວມທັງໝົດ:</span>
+                                <span id="pdf-total">฿ 0</span>
+                            </div>
+                            <div id="pdf-rate-row" class="flex justify-between items-center text-sky-700 font-bold text-[11px] sm:text-xs pt-0.5">
+                                <span id="pdf-rate-label">ອັດຕາແລກປ່ຽນ (1 ฿):</span>
+                                <span id="pdf-rate-val">₭ 680</span>
+                            </div>
+                            <div id="pdf-lak-total-row" class="flex justify-between items-center text-blue-700 font-bold text-xs sm:text-sm">
+                                <span>ລວມເປັນເງິນກີບ:</span>
+                                <span id="pdf-lak-total">₭ 0</span>
+                            </div>
+                            <div id="pdf-deposit-row" class="flex justify-between items-center text-amber-700 font-bold text-xs sm:text-sm border-t border-amber-300 pt-1.5 mt-1">
+                                <span>ເງິນມັດຈຳ (ກີບ):</span>
+                                <span id="pdf-deposit">₭ 0</span>
+                            </div>
+                            <div id="pdf-balance-row" class="flex justify-between items-center text-rose-700 font-bold text-xs sm:text-base pt-1">
+                                <span>ຍອດຄ້າງຊຳລະ:</span>
+                                <span id="pdf-balance">₭ 0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generous Vertical Spacing for Signatures -->
+                    <div class="grid grid-cols-2 gap-6 sm:gap-10 pt-16 pb-6 text-center text-[11px] sm:text-xs text-gray-800">
+                        <div class="border-t border-gray-400 pt-2">
+                            <span class="font-bold">ຜູ້ຮັບເງິນ / ຜູ້ຊ່ອມ</span>
+                        </div>
+                        <div class="border-t border-gray-400 pt-2">
+                            <span class="font-bold">ຜູ້ຈ່າຍເງິນ</span>
+                        </div>
+                    </div>
+
+                    <!-- Footer Note -->
+                    <div class="border-t border-amber-300/80 pt-2.5 mt-2 text-center">
+                        <p id="pdf-footer-note" class="text-[10px] sm:text-xs font-bold text-amber-600">✨ ວ່ອງໄວ ໝັ້ນໃຈ ບໍລິການດີ • ຂອບໃຈທີ່ໃຊ້ບໍລິການ LY FIXMAN ✨</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Resilient Error Guards so buttons never freeze */
+        function safeRun(fn) {
+            try {
+                if (typeof fn === 'function') {
+                    return fn();
+                }
+            } catch (err) {
+                console.error('LY FIXMAN safeRun:', err);
+                showToast('ເກີດຂໍ້ຜິດພາດເລັກນ້ອຍ ແຕ່ລະບົບຍັງໃຊ້ງານໄດ້ປົກກະຕິ');
+            }
+        }
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global error:', message, error || '');
+            return true;
+        };
+
+        window.onunhandledrejection = function(event) {
+            console.error('Promise rejection:', event && event.reason ? event.reason : '');
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+        };
+
+        let gsheetWebAppUrl = '';
+        try {
+            gsheetWebAppUrl = localStorage.getItem('ly_fixman_gsheet_url') || '';
+        } catch (e) {}
+
+        function normalizeDocType(rawType) {
+            if (rawType === 'ໃບຮັບສ້ອມ') return 'ໃບຮັບສ້ອມ';
+            if (rawType === 'ໃບແຈ້ງລາຄາ') return 'ໃບແຈ້ງລາຄາ';
+            return 'ໃບຮັບເງິນ';
+        }
+
+        function getDocPrefix(docType) {
+            const t = normalizeDocType(docType);
+            if (t === 'ໃບຮັບສ້ອມ') return 'REP-';
+            if (t === 'ໃບແຈ້ງລາຄາ') return 'QT-';
+            return 'REC-';
+        }
+
+        function generateNextDocId(docType, list) {
+            const prefix = getDocPrefix(docType);
+            const docs = Array.isArray(list) ? list : [];
+            let maxNum = 0;
+            docs.forEach(function(d) {
+                if (!d || !d.id) return;
+                const m = String(d.id).match(/(\d+)$/);
+                if (m) {
+                    const n = parseInt(m[1], 10);
+                    if (!isNaN(n) && n > maxNum) maxNum = n;
+                }
+            });
+            return prefix + String(maxNum + 1).padStart(4, '0');
+        }
+
+        function createDefaultDoc(docType, existingList) {
+            const type = normalizeDocType(docType);
+            return {
+                id: generateNextDocId(type, existingList),
+                type: type,
+                status: 'ກຳລັງດຳເນີນການ',
+                currency: '฿',
+                customer: {
+                    name: '',
+                    address: '',
+                    phone: '',
+                    messenger: ''
+                },
+                repair: {
+                    device: '',
+                    sn: '',
+                    symptom: '',
+                    warranty: 'ຮັບປະກັນ 30 ວັນ (1 ເດືອນ)'
+                },
+                techIntake: {
+                    symptom: '',
+                    itemsText: '',
+                    technicianName: '',
+                    repairStatus: 'ກຳລັງດຳເນີນການ'
+                },
+                items: [
+                    { title: '', price: '', qty: 1 }
+                ],
+                discount: 0,
+                exchangeRate: 680,
+                deposit: 0,
+                date: new Date().toLocaleDateString('en-GB'),
+                updatedAt: Date.now()
+            };
+        }
+
+        window.shopSettings = {
+            name: 'LY FIXMAN',
+            tagline: 'ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ',
+            address: 'ບ້ານມະນີວົງໄຊ ເມືອງອຸທຸມພອນ ແຂວງສະຫວັນນະເຂດ',
+            phone: '020 96397797',
+            fb: 'Ly soukpasert',
+            logo: '',
+            qrCode: ''
+        };
+
+        window.documentsList = [];
+        window.currentDoc = createDefaultDoc('ໃບຮັບເງິນ', []);
+        let activeHomeStatusFilter = 'ທັງໝົດ';
+        let activeDocsTypeFilter = 'ທັງໝົດ';
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            if (!toast) return;
+            toast.innerText = String(msg || '');
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            clearTimeout(window.__lyToastTimer);
+            window.__lyToastTimer = setTimeout(function() {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        function updateHeaderStatus(isCloudConnected, customLabel) {
+            const dot = document.getElementById('cloud-status-dot');
+            const txt = document.getElementById('cloud-status-text');
+            const count = Array.isArray(window.documentsList) ? window.documentsList.length : 0;
+            if (dot) {
+                dot.className = 'w-2.5 h-2.5 rounded-full ' + (isCloudConnected ? 'bg-emerald-500' : 'bg-amber-500') + ' inline-block shrink-0';
+            }
+            if (txt) {
+                txt.innerText = customLabel || ('ພ້ອມໃຊ້ງານ (' + count + ')');
+            }
+        }
+
+        function escapeAttr(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        /* Strip leading zeros on numeric inputs and outputs */
+        function stripLeadingZeroString(rawVal) {
+            const s = String(rawVal === undefined || rawVal === null ? '' : rawVal).trim();
+            if (!s) return '';
+            if (/^0+$/.test(s)) return '0';
+            if (/^0+(?:\.0+)?$/.test(s)) return '0';
+            if (/^0+[1-9]/.test(s)) {
+                return s.replace(/^0+/, '');
+            }
+            return s;
+        }
+
+        function parseCleanNumber(rawVal, fallback) {
+            const cleaned = stripLeadingZeroString(rawVal);
+            if (!cleaned) return typeof fallback === 'number' ? fallback : 0;
+            const n = parseFloat(cleaned);
+            return isNaN(n) ? (typeof fallback === 'number' ? fallback : 0) : n;
+        }
+
+        function formatCleanAmount(num) {
+            const n = Number(num) || 0;
+            const formatted = n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+            return stripLeadingZeroString(formatted);
+        }
+
+        function applyShopBrandingToUI() {
+            const s = window.shopSettings || {};
+            const name = s.name || 'LY FIXMAN';
+
+            const setText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
+
+            setText('header-shop-name', name);
+            setText('hero-shop-title', name);
+
+            const hLogoImg = document.getElementById('header-shop-logo');
+            const hLogoFallback = document.getElementById('header-shop-logo-fallback');
+            if (hLogoImg && hLogoFallback) {
+                if (s.logo) {
+                    hLogoImg.src = s.logo;
+                    hLogoImg.classList.remove('hidden');
+                    hLogoFallback.classList.add('hidden');
+                } else {
+                    hLogoImg.src = '';
+                    hLogoImg.classList.add('hidden');
+                    hLogoFallback.classList.remove('hidden');
+                    hLogoFallback.innerText = (name.slice(0, 2) || 'LY').toUpperCase();
+                }
+            }
+
+            const logoPrev = document.getElementById('shop-logo-preview');
+            const qrPrev = document.getElementById('shop-qr-preview');
+            if (logoPrev) {
+                if (s.logo) {
+                    logoPrev.src = s.logo;
+                    logoPrev.classList.remove('hidden');
+                } else {
+                    logoPrev.src = '';
+                    logoPrev.classList.add('hidden');
+                }
+            }
+            if (qrPrev) {
+                if (s.qrCode) {
+                    qrPrev.src = s.qrCode;
+                    qrPrev.classList.remove('hidden');
+                } else {
+                    qrPrev.src = '';
+                    qrPrev.classList.add('hidden');
+                }
+            }
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['home', 'docs', 'create', 'settings'];
+            tabs.forEach(function(t) {
+                const section = document.getElementById('tab-' + t);
+                if (section) {
+                    if (t === tabName) section.classList.remove('hidden');
+                    else section.classList.add('hidden');
+                }
+            });
+
+            const navHome = document.getElementById('nav-home');
+            const navDocs = document.getElementById('nav-docs');
+            const navCreateLabel = document.getElementById('nav-create-label');
+            const navSettings = document.getElementById('nav-settings');
+
+            if (navHome) {
+                navHome.className = 'flex flex-col items-center justify-center gap-1 py-1 ' + (tabName === 'home' ? 'text-[#0f5c41] font-bold' : 'text-gray-400 hover:text-[#0f5c41]');
+            }
+            if (navDocs) {
+                navDocs.className = 'flex flex-col items-center justify-center gap-1 py-1 ' + (tabName === 'docs' ? 'text-[#0f5c41] font-bold' : 'text-gray-400 hover:text-[#0f5c41]');
+            }
+            if (navCreateLabel) {
+                navCreateLabel.className = 'text-[11px] mt-1 pointer-events-none ' + (tabName === 'create' ? 'text-[#0f5c41] font-bold' : 'text-gray-500');
+            }
+            if (navSettings) {
+                navSettings.className = 'flex flex-col items-center justify-center gap-1 py-1 ' + (tabName === 'settings' ? 'text-[#0f5c41] font-bold' : 'text-gray-400 hover:text-[#0f5c41]');
+            }
+
+            try {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (e) {}
+        }
+
+        function normalizeDocumentsArray(rawList) {
+            if (!Array.isArray(rawList)) return [];
+            const seen = new Set();
+            const out = [];
+
+            rawList.forEach(function(item, idx) {
+                if (!item || typeof item !== 'object') return;
+                const doc = JSON.parse(JSON.stringify(item));
+                const id = String(doc.id || doc.docId || ('REC-' + String(idx + 1).padStart(4, '0'))).trim();
+                if (!id || seen.has(id)) return;
+                seen.add(id);
+
+                doc.id = id;
+                doc.type = normalizeDocType(doc.type);
+                doc.status = doc.status || 'ກຳລັງດຳເນີນການ';
+                doc.currency = doc.currency || '฿';
+                doc.customer = Object.assign({ name: '', address: '', phone: '', messenger: '' }, doc.customer || {});
+                doc.repair = Object.assign({ device: '', sn: '', symptom: '', warranty: 'ຮັບປະກັນ 30 ວັນ (1 ເດືອນ)' }, doc.repair || {});
+                doc.techIntake = Object.assign({
+                    symptom: doc.repair.symptom || '',
+                    itemsText: '',
+                    technicianName: '',
+                    repairStatus: doc.status || 'ກຳລັງດຳເນີນການ'
+                }, doc.techIntake || {});
+                doc.items = Array.isArray(doc.items) && doc.items.length > 0 ? doc.items : [{ title: '', price: '', qty: 1 }];
+                doc.discount = parseFloat(doc.discount) || 0;
+                doc.exchangeRate = parseFloat(doc.exchangeRate) || 680;
+                doc.deposit = parseFloat(doc.deposit) || 0;
+                doc.date = doc.date || new Date().toLocaleDateString('en-GB');
+                doc.updatedAt = parseInt(doc.updatedAt, 10) || (idx + 1);
+                out.push(doc);
+            });
+
+            return out;
+        }
+
+        function mergeDocumentsWithRemote(remoteDocs) {
+            const remoteNorm = normalizeDocumentsArray(remoteDocs || []);
+            const map = new Map();
+
+            remoteNorm.forEach(function(d) {
+                map.set(d.id, d);
+            });
+
+            (window.documentsList || []).forEach(function(localDoc) {
+                if (!localDoc || !localDoc.id) return;
+                const existing = map.get(localDoc.id);
+                if (!existing || (parseInt(localDoc.updatedAt, 10) || 0) > (parseInt(existing.updatedAt, 10) || 0)) {
+                    map.set(localDoc.id, localDoc);
+                }
+            });
+
+            return Array.from(map.values());
+        }
+
+        function loadLocalData() {
+            try {
+                const savedDocs = localStorage.getItem('ly_fixman_docs_v2') || localStorage.getItem('ly_fixman_docs_v1');
+                if (savedDocs) {
+                    window.documentsList = normalizeDocumentsArray(JSON.parse(savedDocs));
+                } else {
+                    window.documentsList = [];
+                }
+            } catch (e) {
+                window.documentsList = [];
+            }
+
+            try {
+                const savedShop = localStorage.getItem('ly_fixman_shop_v1');
+                if (savedShop) {
+                    window.shopSettings = Object.assign({}, window.shopSettings, JSON.parse(savedShop));
+                }
+            } catch (e) {}
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const paramUrl = params.get('url') || params.get('sheetUrl');
+                if (paramUrl && /^https?:\/\//i.test(paramUrl.trim())) {
+                    gsheetWebAppUrl = paramUrl.trim();
+                    localStorage.setItem('ly_fixman_gsheet_url', gsheetWebAppUrl);
+                }
+            } catch (e) {}
+
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val || '';
+            };
+
+            setVal('shop-name', window.shopSettings.name);
+            setVal('shop-tagline', window.shopSettings.tagline);
+            setVal('shop-address', window.shopSettings.address);
+            setVal('shop-phone', window.shopSettings.phone);
+            setVal('shop-fb', window.shopSettings.fb);
+            setVal('gsheet-webapp-url', gsheetWebAppUrl);
+
+            applyShopBrandingToUI();
+            updateHeaderStatus(Boolean(gsheetWebAppUrl));
+            window.currentDoc = createDefaultDoc('ໃບຮັບເງິນ', window.documentsList);
+            populateEditorForm(window.currentDoc);
+        }
+
+        function persistLocalDocs() {
+            try {
+                const serialized = JSON.stringify(window.documentsList);
+                localStorage.setItem('ly_fixman_docs_v2', serialized);
+                localStorage.setItem('ly_fixman_docs_v1', serialized);
+            } catch (e) {
+                console.warn('localStorage docs warning:', e);
+            }
+        }
+
+        function persistLocalShop() {
+            try {
+                localStorage.setItem('ly_fixman_shop_v1', JSON.stringify(window.shopSettings));
+            } catch (e) {
+                console.warn('localStorage shop warning:', e);
+            }
+        }
+
+        function handleShopImageUpload(event, kind) {
+            const file = event && event.target && event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const maxDim = kind === 'qr' ? 420 : 280;
+                    let w = img.width || maxDim;
+                    let h = img.height || maxDim;
+                    if (w > h && w > maxDim) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else if (h >= w && h > maxDim) {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(64, w);
+                    canvas.height = Math.max(64, h);
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                    if (kind === 'logo') {
+                        window.shopSettings.logo = dataUrl;
+                        showToast('ອັບໂຫຼດໂລໂກ້ຮ້ານສຳເລັດ');
+                    } else {
+                        window.shopSettings.qrCode = dataUrl;
+                        showToast('ອັບໂຫຼດຄິວອາໂຄ້ດຊຳລະເງິນສຳເລັດ');
+                    }
+
+                    persistLocalShop();
+                    applyShopBrandingToUI();
+                    syncShopToGoogleSheet();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function clearShopImage(kind) {
+            if (kind === 'logo') {
+                window.shopSettings.logo = '';
+                showToast('ລຶບໂລໂກ້ຮ້ານແລ້ວ');
+            } else {
+                window.shopSettings.qrCode = '';
+                showToast('ລຶບຄິວອາໂຄ້ດແລ້ວ');
+            }
+            persistLocalShop();
+            applyShopBrandingToUI();
+            syncShopToGoogleSheet();
+        }
+
+        function updateRepairTechSummaryBadge() {
+            const badge = document.getElementById('repair-tech-summary-badge');
+            if (!badge) return;
+            const intake = (window.currentDoc && window.currentDoc.techIntake) ? window.currentDoc.techIntake : {};
+            const tech = intake.technicianName ? ('ຊ່າງ: ' + intake.technicianName) : 'ຍັງບໍ່ທັນລະບຸຊື່ຊ່າງ';
+            const st = intake.repairStatus ? (' • ສະຖານະ: ' + intake.repairStatus) : '';
+            badge.innerText = tech + st;
+        }
+
+        function setDocType(docType) {
+            const normalizedType = normalizeDocType(docType);
+            window.currentDoc.type = normalizedType;
+
+            const idInput = document.getElementById('doc-id-input');
+            const currentId = idInput ? idInput.value.trim() : (window.currentDoc.id || '');
+            if (/^(REC|REP|QT)-\d+$/.test(currentId)) {
+                const numPart = currentId.split('-')[1];
+                const nextPrefix = getDocPrefix(normalizedType);
+                window.currentDoc.id = nextPrefix + numPart;
+                if (idInput) idInput.value = window.currentDoc.id;
+            }
+
+            const badge = document.getElementById('editor-doc-badge');
+            if (badge) badge.innerText = window.currentDoc.id;
+
+            const btnReceipt = document.getElementById('btn-type-receipt');
+            const btnQuote = document.getElementById('btn-type-quote');
+            const btnRepair = document.getElementById('btn-type-repair');
+            const activeCls = 'doc-type-btn py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition border-[#0f5c41] bg-emerald-50 text-[#0f5c41] shadow-sm';
+            const inactiveCls = 'doc-type-btn py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition border-gray-200 bg-white text-gray-700';
+
+            if (btnReceipt) btnReceipt.className = normalizedType === 'ໃບຮັບເງິນ' ? activeCls : inactiveCls;
+            if (btnQuote) btnQuote.className = normalizedType === 'ໃບແຈ້ງລາຄາ' ? activeCls : inactiveCls;
+            if (btnRepair) btnRepair.className = normalizedType === 'ໃບຮັບສ້ອມ' ? activeCls : inactiveCls;
+
+            const techBar = document.getElementById('repair-tech-action-bar');
+            if (techBar) {
+                if (normalizedType === 'ໃບຮັບສ້ອມ') {
+                    techBar.classList.remove('hidden');
+                    updateRepairTechSummaryBadge();
+                } else {
+                    techBar.classList.add('hidden');
+                }
+            }
+        }
+
+        function startNewDocument(preferredType) {
+            const typeToUse = preferredType
+                ? normalizeDocType(preferredType)
+                : ((window.currentDoc && window.currentDoc.type) ? window.currentDoc.type : 'ໃບຮັບເງິນ');
+            window.currentDoc = createDefaultDoc(typeToUse, window.documentsList);
+            populateEditorForm(window.currentDoc);
+            switchTab('create');
+            showToast('ສ້າງຟອມ ' + typeToUse + ' (' + window.currentDoc.id + ')');
+        }
+
+        function editDocument(docId) {
+            const found = (window.documentsList || []).find(function(d) { return d.id === docId; });
+            if (!found) return;
+            window.currentDoc = JSON.parse(JSON.stringify(found));
+            populateEditorForm(window.currentDoc);
+            switchTab('create');
+        }
+
+        function deleteDocument(docId) {
+            window.documentsList = (window.documentsList || []).filter(function(d) { return d.id !== docId; });
+            persistLocalDocs();
+            updateHeaderStatus(Boolean(gsheetWebAppUrl));
+            renderDashboardAndLists();
+            showToast('ລຶບເອກະສານ ' + docId + ' ແລ້ວ');
+        }
+
+        function populateEditorForm(doc) {
+            const d = doc || createDefaultDoc('ໃບຮັບເງິນ', window.documentsList);
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            };
+
+            setVal('doc-id-input', d.id || 'REC-0001');
+            setVal('doc-date-input', d.date || new Date().toLocaleDateString('en-GB'));
+            setVal('doc-currency', d.currency || '฿');
+
+            setVal('cust-name', d.customer && d.customer.name ? d.customer.name : '');
+            setVal('cust-address', d.customer && d.customer.address ? d.customer.address : '');
+            setVal('cust-phone', d.customer && d.customer.phone ? d.customer.phone : '');
+            setVal('cust-messenger', d.customer && d.customer.messenger ? d.customer.messenger : '');
+
+            setVal('device-name', d.repair && d.repair.device ? d.repair.device : '');
+            setVal('device-sn', d.repair && d.repair.sn ? d.repair.sn : '');
+            setVal('device-symptom', d.repair && d.repair.symptom ? d.repair.symptom : '');
+            setVal('device-warranty', d.repair && d.repair.warranty ? d.repair.warranty : 'ຮັບປະກັນ 30 ວັນ (1 ເດືອນ)');
+
+            const cleanDiscount = stripLeadingZeroString(d.discount);
+            const cleanRate = stripLeadingZeroString(d.exchangeRate || 680);
+            const cleanDeposit = stripLeadingZeroString(d.deposit);
+
+            setVal('calc-discount', cleanDiscount === '0' ? '' : cleanDiscount);
+            setVal('calc-exchange-rate', cleanRate);
+            setVal('calc-deposit', cleanDeposit === '0' ? '' : cleanDeposit);
+
+            setDocType(d.type || 'ໃບຮັບເງິນ');
+            renderItemRows();
+            calculateTotals();
+        }
+
+        function renderItemRows() {
+            const container = document.getElementById('items-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const items = Array.isArray(window.currentDoc.items) && window.currentDoc.items.length > 0
+                ? window.currentDoc.items
+                : [{ title: '', price: '', qty: 1 }];
+
+            items.forEach(function(item, idx) {
+                const rawPrice = stripLeadingZeroString(item.price);
+                const priceDisplay = (rawPrice === '' || rawPrice === '0') ? '' : rawPrice;
+                const rawQty = stripLeadingZeroString(item.qty);
+                const qtyDisplay = (rawQty === '' || rawQty === '0') ? '1' : rawQty;
+
+                const row = document.createElement('div');
+                row.className = 'flex gap-2 items-center bg-gray-50 p-2.5 rounded-xl border border-gray-200';
+                row.innerHTML = `
+                    <div class="flex-1 space-y-1.5">
+                        <input type="text" value="${escapeAttr(item.title || '')}" placeholder="ລາຍການ (ເຊັ່ນ: ປ່ຽນຄີບອດໃໝ່)" data-item-idx="${idx}" data-item-field="title" class="item-input w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs">
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <input type="text" inputmode="decimal" value="${escapeAttr(priceDisplay)}" placeholder="ລາຄາ" data-item-idx="${idx}" data-item-field="price" class="item-input bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs text-right">
+                            <input type="text" inputmode="numeric" value="${escapeAttr(qtyDisplay)}" placeholder="ຈຳນວນ" data-item-idx="${idx}" data-item-field="qty" class="item-input bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs text-center">
+                            <div class="bg-emerald-50 border border-emerald-200/80 rounded-lg px-2 py-1 text-xs font-bold text-[#0f5c41] flex items-center justify-end truncate" id="item-row-total-${idx}">฿ 0</div>
+                        </div>
+                    </div>
+                    <button type="button" data-action="remove-item" data-item-idx="${idx}" class="text-rose-600 hover:bg-rose-50 px-2 py-2 rounded-lg" title="ລຶບລາຍການ">
+                        <i class="fa-solid fa-trash-can text-sm pointer-events-none"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function addItemRow() {
+            if (!Array.isArray(window.currentDoc.items)) window.currentDoc.items = [];
+            window.currentDoc.items.push({ title: '', price: '', qty: 1 });
+            renderItemRows();
+            calculateTotals();
+        }
+
+        function removeItemRow(idx) {
+            if (!Array.isArray(window.currentDoc.items)) return;
+            if (window.currentDoc.items.length > 1) {
+                window.currentDoc.items.splice(idx, 1);
+            } else {
+                window.currentDoc.items = [{ title: '', price: '', qty: 1 }];
+            }
+            renderItemRows();
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const currEl = document.getElementById('doc-currency');
+            const discEl = document.getElementById('calc-discount');
+            const rateEl = document.getElementById('calc-exchange-rate');
+            const depEl = document.getElementById('calc-deposit');
+
+            const curr = currEl ? (currEl.value || '฿') : (window.currentDoc.currency || '฿');
+            let subtotal = 0;
+
+            (window.currentDoc.items || []).forEach(function(item, idx) {
+                const priceNum = parseCleanNumber(item.price, 0);
+                const qtyNum = Math.max(1, Math.floor(parseCleanNumber(item.qty, 1)));
+                const rowAmt = priceNum * qtyNum;
+                subtotal += rowAmt;
+                const rowTotalEl = document.getElementById('item-row-total-' + idx);
+                if (rowTotalEl) {
+                    rowTotalEl.innerText = curr + ' ' + formatCleanAmount(rowAmt);
+                }
+            });
+
+            const discount = discEl ? parseCleanNumber(discEl.value, 0) : parseCleanNumber(window.currentDoc.discount, 0);
+            const total = Math.max(0, subtotal - discount);
+            const rate = rateEl ? parseCleanNumber(rateEl.value, 0) : parseCleanNumber(window.currentDoc.exchangeRate, 680);
+            const deposit = depEl ? parseCleanNumber(depEl.value, 0) : parseCleanNumber(window.currentDoc.deposit, 0);
+
+            window.currentDoc.currency = curr;
+            window.currentDoc.discount = discount;
+            window.currentDoc.exchangeRate = rate;
+            window.currentDoc.deposit = deposit;
+
+            const setText = (id, txt) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = txt;
+            };
+
+            setText('calc-subtotal', curr + ' ' + formatCleanAmount(subtotal));
+            setText('calc-total', curr + ' ' + formatCleanAmount(total));
+
+            const exBox = document.getElementById('exchange-rate-box');
+            const lakRow = document.getElementById('calc-lak-row');
+            const balEl = document.getElementById('calc-balance');
+
+            if (curr === '₭') {
+                if (exBox) exBox.classList.add('hidden');
+                if (lakRow) lakRow.classList.add('hidden');
+                const balLak = Math.max(0, total - deposit);
+                if (balEl) balEl.innerText = '₭ ' + formatCleanAmount(balLak);
+            } else {
+                if (exBox) exBox.classList.remove('hidden');
+                if (lakRow) lakRow.classList.remove('hidden');
+                setText('exchange-rate-label', 'ອັດຕາແລກປ່ຽນ (1 ' + curr + ')');
+                const effRate = rate > 0 ? rate : 680;
+                const totalLak = Math.round(total * effRate);
+                const balLak = Math.max(0, totalLak - deposit);
+                setText('calc-total-lak', '₭ ' + formatCleanAmount(totalLak));
+                if (balEl) balEl.innerText = '₭ ' + formatCleanAmount(balLak);
+            }
+        }
+
+        function formatDocItemsSummary(doc) {
+            const items = (doc && Array.isArray(doc.items)) ? doc.items : [];
+            const parts = items
+                .filter(function(it) { return it && String(it.title || '').trim() !== ''; })
+                .map(function(it) {
+                    const q = Math.max(1, parseInt(it.qty, 10) || 1);
+                    return String(it.title).trim() + (q > 1 ? ' (x' + q + ')' : '');
+                });
+            return parts.join(', ');
+        }
+
+        function collectFormIntoCurrentDoc() {
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value : '';
+            };
+
+            const docId = getVal('doc-id-input').trim() || window.currentDoc.id || 'REC-0001';
+            const symptomVal = getVal('device-symptom').trim();
+
+            window.currentDoc.id = docId;
+            window.currentDoc.date = getVal('doc-date-input').trim() || new Date().toLocaleDateString('en-GB');
+            window.currentDoc.currency = getVal('doc-currency') || '฿';
+
+            window.currentDoc.customer = {
+                name: getVal('cust-name').trim() || 'ລູກຄ້າທົ່ວໄປ',
+                address: getVal('cust-address').trim(),
+                phone: getVal('cust-phone').trim(),
+                messenger: getVal('cust-messenger').trim()
+            };
+
+            window.currentDoc.repair = {
+                device: getVal('device-name').trim(),
+                sn: getVal('device-sn').trim(),
+                symptom: symptomVal,
+                warranty: getVal('device-warranty') || 'ຮັບປະກັນ 30 ວັນ (1 ເດືອນ)'
+            };
+
+            const existingIntake = window.currentDoc.techIntake || {};
+            window.currentDoc.techIntake = {
+                symptom: symptomVal,
+                itemsText: existingIntake.itemsText || formatDocItemsSummary(window.currentDoc),
+                technicianName: existingIntake.technicianName || '',
+                repairStatus: existingIntake.repairStatus || window.currentDoc.status || 'ກຳລັງດຳເນີນການ'
+            };
+            window.currentDoc.status = window.currentDoc.techIntake.repairStatus;
+
+            window.currentDoc.discount = parseCleanNumber(getVal('calc-discount'), 0);
+            window.currentDoc.exchangeRate = parseCleanNumber(getVal('calc-exchange-rate'), 680);
+            window.currentDoc.deposit = parseCleanNumber(getVal('calc-deposit'), 0);
+            window.currentDoc.updatedAt = Date.now();
+        }
+
+        /* Technician Intake Modal ('ຊ່າງຮັບງານ') */
+        function openTechIntakeModal() {
+            collectFormIntoCurrentDoc();
+            const modal = document.getElementById('tech-intake-modal');
+            if (!modal) return;
+
+            const intake = window.currentDoc.techIntake || {};
+            const symInput = document.getElementById('device-symptom');
+            const liveSymptom = (symInput && symInput.value.trim()) ? symInput.value.trim() : (intake.symptom || '');
+            const itemsSummary = intake.itemsText || formatDocItemsSummary(window.currentDoc);
+
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val || '';
+            };
+
+            setVal('tech-symptom-linked', liveSymptom);
+            setVal('tech-items-summary', itemsSummary);
+            setVal('tech-repairer-name', intake.technicianName || '');
+            setVal('tech-repair-status', intake.repairStatus || 'ກຳລັງດຳເນີນການ');
+
+            modal.classList.remove('hidden');
+        }
+
+        function syncTechItemsFromMainForm() {
+            collectFormIntoCurrentDoc();
+            const summary = formatDocItemsSummary(window.currentDoc);
+            const el = document.getElementById('tech-items-summary');
+            if (el) el.value = summary;
+            showToast('ດຶງລາຍການຈາກຟອມແລ້ວ');
+        }
+
+        function closeTechIntakeModal() {
+            const modal = document.getElementById('tech-intake-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function saveTechIntake() {
+            collectFormIntoCurrentDoc();
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : '';
+            };
+
+            const symptomVal = getVal('tech-symptom-linked');
+            const itemsText = getVal('tech-items-summary');
+            const technicianName = getVal('tech-repairer-name');
+            const repairStatus = getVal('tech-repair-status') || 'ກຳລັງດຳເນີນການ';
+
+            window.currentDoc.repair.symptom = symptomVal;
+            const mainSymInput = document.getElementById('device-symptom');
+            if (mainSymInput) mainSymInput.value = symptomVal;
+
+            window.currentDoc.techIntake = {
+                symptom: symptomVal,
+                itemsText: itemsText,
+                technicianName: technicianName,
+                repairStatus: repairStatus
+            };
+            window.currentDoc.status = repairStatus;
+            window.currentDoc.updatedAt = Date.now();
+
+            updateRepairTechSummaryBadge();
+            closeTechIntakeModal();
+            showToast('ບັນທຶກຂໍ້ມູນຊ່າງຮັບງານສຳເລັດ!');
+        }
+
+        function saveDocument() {
+            collectFormIntoCurrentDoc();
+            const snap = JSON.parse(JSON.stringify(window.currentDoc));
+
+            const idx = window.documentsList.findIndex(function(d) { return d.id === snap.id; });
+            if (idx >= 0) window.documentsList.splice(idx, 1);
+            window.documentsList.unshift(snap);
+            window.documentsList = normalizeDocumentsArray(window.documentsList);
+            persistLocalDocs();
+
+            updateHeaderStatus(Boolean(gsheetWebAppUrl));
+            renderDashboardAndLists();
+            showToast('ບັນທຶກ ' + snap.type + ' (' + snap.id + ') ສຳເລັດ!');
+
+            if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.saveDocumentToSheet === 'function') {
+                google.script.run
+                    .withSuccessHandler(function() {
+                        updateHeaderStatus(true);
+                    })
+                    .saveDocumentToSheet(snap);
+            } else if (gsheetWebAppUrl) {
+                fetch(gsheetWebAppUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'saveDoc', doc: snap })
+                })
+                    .then(function() {
+                        updateHeaderStatus(true);
+                    })
+                    .catch(function() {});
+            }
+        }
+
+        function saveShopSettings() {
+            const getVal = (id, fallback) => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : fallback;
+            };
+
+            window.shopSettings.name = getVal('shop-name', 'LY FIXMAN') || 'LY FIXMAN';
+            window.shopSettings.tagline = getVal('shop-tagline', 'ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ') || 'ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ';
+            window.shopSettings.address = getVal('shop-address', 'ບ້ານມະນີວົງໄຊ ເມືອງອຸທຸມພອນ ແຂວງສະຫວັນນະເຂດ');
+            window.shopSettings.phone = getVal('shop-phone', '020 96397797');
+            window.shopSettings.fb = getVal('shop-fb', 'Ly soukpasert');
+
+            persistLocalShop();
+            applyShopBrandingToUI();
+            showToast('ບັນທຶກຂໍ້ມູນຮ້ານສຳເລັດ!');
+            syncShopToGoogleSheet();
+        }
+
+        function syncShopToGoogleSheet() {
+            if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.saveShopSettingsToSheet === 'function') {
+                google.script.run.saveShopSettingsToSheet(window.shopSettings);
+            } else if (gsheetWebAppUrl) {
+                fetch(gsheetWebAppUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'saveShop', shop: window.shopSettings })
+                }).catch(function() {});
+            }
+        }
+
+        function saveAndSyncWebAppUrl() {
+            const inputEl = document.getElementById('gsheet-webapp-url');
+            const rawUrl = inputEl ? String(inputEl.value || '').trim() : '';
+            if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) {
+                showToast('ກະລຸນາວາງລິ້ງ Google Apps Script Web App (/exec) ໃຫ້ຖືກຕ້ອງ');
+                return;
+            }
+            gsheetWebAppUrl = rawUrl;
+            try {
+                localStorage.setItem('ly_fixman_gsheet_url', gsheetWebAppUrl);
+            } catch (e) {}
+            showToast('ບັນທຶກລິ້ງແລ້ວ ກຳລັງຊິ້ງຂໍ້ມູນ...');
+            syncFromGoogleSheet(true);
+        }
+
+        function fetchViaJsonp(url, callback) {
+            try {
+                const cbName = 'lyFixmanCb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+                const script = document.createElement('script');
+                let settled = false;
+
+                const cleanup = () => {
+                    try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
+                };
+
+                const timer = setTimeout(function() {
+                    if (!settled) {
+                        settled = true;
+                        cleanup();
+                        callback(null);
+                    }
+                }, 8000);
+
+                window[cbName] = function(payload) {
+                    if (!settled) {
+                        settled = true;
+                        clearTimeout(timer);
+                        cleanup();
+                        callback(payload);
+                    }
+                };
+
+                const sep = url.indexOf('?') >= 0 ? '&' : '?';
+                script.src = url + sep + 'action=get&callback=' + encodeURIComponent(cbName) + '&_t=' + Date.now();
+                script.onerror = function() {
+                    if (!settled) {
+                        settled = true;
+                        clearTimeout(timer);
+                        cleanup();
+                        callback(null);
+                    }
+                };
+                document.body.appendChild(script);
+            } catch (e) {
+                callback(null);
+            }
+        }
+
+        function applyRemotePayload(res, showFeedback) {
+            if (!res) {
+                updateHeaderStatus(false);
+                if (showFeedback) {
+                    showToast('ບໍ່ສາມາດດຶງຂໍ້ມູນຈາກ Sheet ໄດ້ (ກວດສອບລິ້ງ /exec)');
+                }
+                return;
+            }
+
+            const remoteDocs = Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : []);
+            window.documentsList = mergeDocumentsWithRemote(remoteDocs);
+            persistLocalDocs();
+
+            if (res.shop && typeof res.shop === 'object') {
+                window.shopSettings = Object.assign({}, window.shopSettings, res.shop);
+                persistLocalShop();
+                applyShopBrandingToUI();
+            }
+
+            updateHeaderStatus(true);
+            renderDashboardAndLists();
+            if (showFeedback) {
+                showToast('ຊິ້ງຂໍ້ມູນສຳເລັດ (' + window.documentsList.length + ' ລາຍການ)');
+            }
+        }
+
+        function syncFromGoogleSheet(showFeedback) {
+            if (showFeedback) {
+                updateHeaderStatus(false, 'ກຳລັງຊິ້ງ...');
+                showToast('ກຳລັງດຶງຂໍ້ມູນຈາກ Google Sheet...');
+            }
+
+            if (typeof google !== 'undefined' && google.script && google.script.run && typeof google.script.run.getDocumentsFromSheet === 'function') {
+                google.script.run
+                    .withSuccessHandler(function(res) {
+                        safeRun(function() { applyRemotePayload(res, showFeedback); });
+                    })
+                    .withFailureHandler(function() {
+                        safeRun(function() { applyRemotePayload(null, showFeedback); });
+                    })
+                    .getDocumentsFromSheet();
+                return;
+            }
+
+            const targetUrl = (gsheetWebAppUrl || '').trim();
+            if (!targetUrl) {
+                updateHeaderStatus(false);
+                if (showFeedback) {
+                    showToast('ກະລຸນາໃສ່ລິ້ງ Web App (/exec) ໃນໜ້າ ຕັ້ງຄ່າ ກ່ອນ');
+                }
+                return;
+            }
+
+            fetchViaJsonp(targetUrl, function(jsonpPayload) {
+                if (jsonpPayload) {
+                    applyRemotePayload(jsonpPayload, showFeedback);
+                    return;
+                }
+                const sep = targetUrl.indexOf('?') >= 0 ? '&' : '?';
+                fetch(targetUrl + sep + 'action=get&_t=' + Date.now())
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) { applyRemotePayload(data, showFeedback); })
+                    .catch(function() { applyRemotePayload(null, showFeedback); });
+            });
+        }
+
+        function exportJsonBackup() {
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                shop: window.shopSettings,
+                documents: window.documentsList
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'LY-FIXMAN-Backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('ສົ່ງອອກໄຟລ໌ສຳຮອງຂໍ້ມູນ JSON ສຳເລັດ');
+        }
+
+        function importJsonBackup(event) {
+            const file = event && event.target && event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const docs = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.documents) ? parsed.documents : []);
+                    window.documentsList = mergeDocumentsWithRemote(docs);
+                    persistLocalDocs();
+                    if (parsed.shop && typeof parsed.shop === 'object') {
+                        window.shopSettings = Object.assign({}, window.shopSettings, parsed.shop);
+                        persistLocalShop();
+                        applyShopBrandingToUI();
+                    }
+                    updateHeaderStatus(Boolean(gsheetWebAppUrl));
+                    renderDashboardAndLists();
+                    showToast('ນຳເຂົ້າຂໍ້ມູນສຳເລັດ (' + window.documentsList.length + ' ລາຍການ)');
+                } catch (err) {
+                    showToast('ໄຟລ໌ JSON ບໍ່ຖືກຕ້ອງ');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function computeDocNetAmount(doc) {
+            const items = Array.isArray(doc.items) ? doc.items : [];
+            const rawSum = items.reduce(function(acc, item) {
+                const p = parseFloat(item.price) || 0;
+                const q = parseInt(item.qty, 10) || 1;
+                return acc + (p * q);
+            }, 0);
+            const disc = parseFloat(doc.discount) || 0;
+            return Math.max(0, rawSum - disc);
+        }
+
+        function parseDocMonthYear(dateStr) {
+            const parts = String(dateStr || '').split('/');
+            if (parts.length === 3) {
+                const m = parseInt(parts[1], 10);
+                const y = parseInt(parts[2], 10);
+                if (!isNaN(m) && !isNaN(y)) return { month: m, year: y };
+            }
+            const now = new Date();
+            return { month: now.getMonth() + 1, year: now.getFullYear() };
+        }
+
+        function buildDocCardHtml(doc) {
+            const net = computeDocNetAmount(doc);
+            const curr = doc.currency || '฿';
+            const custName = (doc.customer && doc.customer.name) ? doc.customer.name : 'ລູກຄ້າທົ່ວໄປ';
+            const deviceName = (doc.repair && doc.repair.device) ? doc.repair.device : '-';
+            const techName = (doc.techIntake && doc.techIntake.technicianName) ? doc.techIntake.technicianName : '';
+            const statusText = doc.status || 'ກຳລັງດຳເນີນການ';
+
+            let badgeClass = 'bg-emerald-50 text-[#0f5c41] border-emerald-200';
+            if (statusText === 'ສັ່ງເຄື່ອງ') badgeClass = 'bg-sky-50 text-sky-800 border-sky-200';
+            else if (statusText === 'ກຳລັງດຳເນີນການ') badgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+            else if (statusText === 'ລໍຖ້າອາໄຫຼ່') badgeClass = 'bg-orange-50 text-orange-800 border-orange-200';
+            else if (statusText === 'ສຳເລັດ') badgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+
+            return `
+                <div class="bg-white p-3 rounded-2xl border border-gray-200 shadow-sm space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-xs font-bold text-[#0f5c41]">${escapeAttr(doc.id)}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">${escapeAttr(doc.type)}</span>
+                                <span class="text-[11px] text-gray-400">${escapeAttr(doc.date || '')}</span>
+                            </div>
+                            <h4 class="text-xs sm:text-sm font-bold text-gray-900 truncate mt-0.5">${escapeAttr(custName)}</h4>
+                            <p class="text-[11px] text-gray-500 truncate">ອຸປະກອນ: ${escapeAttr(deviceName)}${techName ? ' • ຊ່າງ: ' + escapeAttr(techName) : ''}</p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <span class="text-xs sm:text-sm font-bold text-[#0f5c41] block">${escapeAttr(curr + ' ' + formatCleanAmount(net))}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block mt-1 ${badgeClass}">${escapeAttr(statusText)}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-gray-100">
+                        <button type="button" data-action="preview-saved-doc" data-doc-id="${escapeAttr(doc.id)}" class="bg-amber-50 hover:bg-amber-100 text-amber-900 py-1.5 rounded-xl text-[11px] font-bold">
+                            <i class="fa-solid fa-eye mr-1 pointer-events-none"></i><span class="pointer-events-none">ເບິ່ງບິນ</span>
+                        </button>
+                        <button type="button" data-action="edit-doc" data-doc-id="${escapeAttr(doc.id)}" class="bg-emerald-50 hover:bg-emerald-100 text-[#0f5c41] py-1.5 rounded-xl text-[11px] font-bold">
+                            <i class="fa-solid fa-pen-to-square mr-1 pointer-events-none"></i><span class="pointer-events-none">ແກ້ໄຂ</span>
+                        </button>
+                        <button type="button" data-action="delete-doc" data-doc-id="${escapeAttr(doc.id)}" class="bg-rose-50 hover:bg-rose-100 text-rose-700 py-1.5 rounded-xl text-[11px] font-bold">
+                            <i class="fa-solid fa-trash mr-1 pointer-events-none"></i><span class="pointer-events-none">ລຶບ</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDashboardAndLists() {
+            const docs = window.documentsList || [];
+            const now = new Date();
+            const curMonth = now.getMonth() + 1;
+            const curYear = now.getFullYear();
+
+            let monthTotalLak = 0;
+            let yearTotalLak = 0;
+            let totalDepositLak = 0;
+            let totalUnpaidLak = 0;
+
+            docs.forEach(function(doc) {
+                const net = computeDocNetAmount(doc);
+                const dep = parseFloat(doc.deposit) || 0;
+                const rate = parseFloat(doc.exchangeRate) || 680;
+                const curr = doc.currency || '฿';
+                const netLak = curr === '₭' ? net : Math.round(net * rate);
+
+                const my = parseDocMonthYear(doc.date);
+                if (my.year === curYear) {
+                    yearTotalLak += netLak;
+                    if (my.month === curMonth) {
+                        monthTotalLak += netLak;
+                    }
+                }
+
+                totalDepositLak += dep;
+                if (doc.status !== 'ສຳເລັດ') {
+                    totalUnpaidLak += Math.max(0, netLak - dep);
+                }
+            });
+
+            const setText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
+
+            setText('dash-month-total', '₭ ' + formatCleanAmount(monthTotalLak));
+            setText('dash-deposit-total', '₭ ' + formatCleanAmount(totalDepositLak));
+            setText('dash-unpaid-total', '₭ ' + formatCleanAmount(totalUnpaidLak));
+            setText('dash-year-total', '₭ ' + formatCleanAmount(yearTotalLak));
+
+            // 1. Render Home Recent List with status pill filter
+            const homeListEl = document.getElementById('home-recent-list');
+            if (homeListEl) {
+                const filteredHome = docs.filter(function(d) {
+                    if (activeHomeStatusFilter === 'ທັງໝົດ') return true;
+                    return (d.status || '') === activeHomeStatusFilter;
+                });
+
+                if (!filteredHome.length) {
+                    homeListEl.innerHTML = `<p class="text-xs text-gray-400 text-center py-8">ຍັງບໍ່ມີເອກະສານໃນໝວດ "${escapeAttr(activeHomeStatusFilter)}"</p>`;
+                } else {
+                    homeListEl.innerHTML = filteredHome.slice(0, 10).map(buildDocCardHtml).join('');
+                }
+            }
+
+            // 2. Render All Documents List
+            const allListEl = document.getElementById('all-docs-list');
+            if (allListEl) {
+                const searchEl = document.getElementById('search-docs');
+                const q = searchEl ? String(searchEl.value || '').trim().toLowerCase() : '';
+                const filteredAll = docs.filter(function(d) {
+                    if (activeDocsTypeFilter !== 'ທັງໝົດ' && d.type !== activeDocsTypeFilter) return false;
+                    if (!q) return true;
+                    return JSON.stringify(d).toLowerCase().indexOf(q) >= 0;
+                });
+
+                if (!filteredAll.length) {
+                    allListEl.innerHTML = '<p class="text-xs text-gray-400 text-center py-8 bg-white rounded-2xl border border-dashed border-gray-200">ບໍ່ພົບເອກະສານ</p>';
+                } else {
+                    allListEl.innerHTML = filteredAll.map(buildDocCardHtml).join('');
+                }
+            }
+        }
+
+        function setHomeStatusFilter(statusVal) {
+            activeHomeStatusFilter = statusVal || 'ທັງໝົດ';
+            document.querySelectorAll('.home-pill').forEach(function(btn) {
+                if (btn.getAttribute('data-status') === activeHomeStatusFilter) {
+                    btn.className = 'home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-[#0f5c41] text-white shadow-sm';
+                } else {
+                    btn.className = 'home-pill px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200';
+                }
+            });
+            renderDashboardAndLists();
+        }
+
+        function setDocsTypeFilter(typeVal) {
+            activeDocsTypeFilter = typeVal || 'ທັງໝົດ';
+            document.querySelectorAll('.docs-type-pill').forEach(function(btn) {
+                if (btn.getAttribute('data-type') === activeDocsTypeFilter) {
+                    btn.className = 'docs-type-pill px-3 py-1 rounded-full text-xs font-bold bg-[#0f5c41] text-white whitespace-nowrap';
+                } else {
+                    btn.className = 'docs-type-pill px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 whitespace-nowrap';
+                }
+            });
+            renderDashboardAndLists();
+        }
+
+        /* Classic LY FIXMAN Invoice / Repair Sheet Preview (No Technician Intake Modal inside) */
+        function previewPDF() {
+            collectFormIntoCurrentDoc();
+            closeTechIntakeModal();
+
+            const s = window.shopSettings || {};
+            const shopName = s.name || 'LY FIXMAN';
+            const tagline = s.tagline || 'ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ';
+            const address = s.address || 'ບ້ານມະນີວົງໄຊ ເມືອງອຸທຸມພອນ ແຂວງສະຫວັນນະເຂດ';
+            const phone = s.phone || '020 96397797';
+            const fb = s.fb || 'Ly soukpasert';
+
+            const setText = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
+
+            setText('pdf-shop-name', shopName);
+            setText('pdf-shop-subtitle', tagline);
+            setText('pdf-shop-address', address);
+            setText('pdf-shop-meta', 'Tel: ' + phone + (fb ? ' | FB: ' + fb : ''));
+
+            const pdfLogo = document.getElementById('pdf-shop-logo');
+            const pdfLogoFallback = document.getElementById('pdf-shop-logo-fallback');
+            if (pdfLogo && pdfLogoFallback) {
+                if (s.logo) {
+                    pdfLogo.src = s.logo;
+                    pdfLogo.classList.remove('hidden');
+                    pdfLogoFallback.classList.add('hidden');
+                } else {
+                    pdfLogo.src = '';
+                    pdfLogo.classList.add('hidden');
+                    pdfLogoFallback.classList.remove('hidden');
+                    pdfLogoFallback.innerText = (shopName.slice(0, 2) || 'LY').toUpperCase();
+                }
+            }
+
+            const pdfQrBox = document.getElementById('pdf-qr-box');
+            const pdfQrImg = document.getElementById('pdf-shop-qr');
+            if (pdfQrBox && pdfQrImg) {
+                if (s.qrCode) {
+                    pdfQrImg.src = s.qrCode;
+                    pdfQrBox.classList.remove('hidden');
+                } else {
+                    pdfQrImg.src = '';
+                    pdfQrBox.classList.add('hidden');
+                }
+            }
+
+            const doc = window.currentDoc || createDefaultDoc('ໃບຮັບເງິນ', window.documentsList);
+            setText('pdf-doc-no', doc.id || 'REC-0001');
+            setText('pdf-doc-date', 'ວັນທີ: ' + (doc.date || new Date().toLocaleDateString('en-GB')));
+            setText('pdf-doc-type', doc.type || 'ໃບຮັບເງິນ');
+
+            const cust = doc.customer || {};
+            setText('pdf-cust-name', cust.name || 'ລູກຄ້າທົ່ວໄປ');
+            setText('pdf-cust-address', cust.address || '-');
+            setText('pdf-cust-phone', 'Tel: ' + (cust.phone || '-'));
+
+            const msgEl = document.getElementById('pdf-cust-messenger');
+            if (msgEl) {
+                if (cust.messenger) {
+                    msgEl.innerText = 'FB/Messenger: ' + cust.messenger;
+                    msgEl.classList.remove('hidden');
+                } else {
+                    msgEl.classList.add('hidden');
+                }
+            }
+
+            const rep = doc.repair || {};
+            setText('pdf-device-name', rep.device || '-');
+            setText('pdf-device-sn', 'SN: ' + (rep.sn || '-'));
+            setText('pdf-device-symptom', 'ອາການ: ' + (rep.symptom || '-'));
+            setText('pdf-device-warranty', 'ປະກັນ: ' + (rep.warranty || 'ບໍ່ມີປະກັນ'));
+
+            const tbody = document.getElementById('pdf-items-body');
+            const curr = doc.currency || '฿';
+            let subtotal = 0;
+
+            if (tbody) {
+                tbody.innerHTML = '';
+                const rows = Array.isArray(doc.items) && doc.items.length > 0 ? doc.items : [{ title: '-', price: 0, qty: 1 }];
+                rows.forEach(function(item) {
+                    const priceNum = parseCleanNumber(item.price, 0);
+                    const qtyNum = Math.max(1, Math.floor(parseCleanNumber(item.qty, 1)));
+                    const amt = priceNum * qtyNum;
+                    subtotal += amt;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="py-1.5 px-2 text-gray-900 break-words">${escapeAttr(item.title || '-')}</td>
+                        <td class="py-1.5 px-2 text-right text-gray-800 whitespace-nowrap">${escapeAttr(curr + ' ' + formatCleanAmount(priceNum))}</td>
+                        <td class="py-1.5 px-2 text-center text-gray-800 whitespace-nowrap">${escapeAttr(String(qtyNum))}</td>
+                        <td class="py-1.5 px-2 text-right font-bold text-gray-950 whitespace-nowrap">${escapeAttr(curr + ' ' + formatCleanAmount(amt))}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            const discount = parseCleanNumber(doc.discount, 0);
+            const total = Math.max(0, subtotal - discount);
+            const rate = parseCleanNumber(doc.exchangeRate, 680);
+            const deposit = parseCleanNumber(doc.deposit, 0);
+
+            setText('pdf-subtotal', curr + ' ' + formatCleanAmount(subtotal));
+            setText('pdf-discount', curr + ' ' + formatCleanAmount(discount));
+            setText('pdf-total', curr + ' ' + formatCleanAmount(total));
+
+            const rateRow = document.getElementById('pdf-rate-row');
+            const lakRow = document.getElementById('pdf-lak-total-row');
+            const depositRow = document.getElementById('pdf-deposit-row');
+            const balanceRow = document.getElementById('pdf-balance-row');
+
+            let totalInLak = total;
+            if (curr !== '₭') {
+                const effRate = rate > 0 ? rate : 680;
+                totalInLak = Math.round(total * effRate);
+                if (rateRow) rateRow.classList.remove('hidden');
+                if (lakRow) lakRow.classList.remove('hidden');
+                setText('pdf-rate-label', 'ອັດຕາແລກປ່ຽນ (1 ' + curr + '):');
+                setText('pdf-rate-val', '₭ ' + formatCleanAmount(effRate));
+                setText('pdf-lak-total', '₭ ' + formatCleanAmount(totalInLak));
+            } else {
+                if (rateRow) rateRow.classList.add('hidden');
+                if (lakRow) lakRow.classList.add('hidden');
+            }
+
+            if (depositRow) depositRow.classList.remove('hidden');
+            setText('pdf-deposit', '₭ ' + formatCleanAmount(deposit));
+
+            const balanceVal = Math.max(0, totalInLak - deposit);
+            if (balanceRow) balanceRow.classList.remove('hidden');
+            setText('pdf-balance', '₭ ' + formatCleanAmount(balanceVal));
+
+            setText('pdf-footer-note', '✨ ວ່ອງໄວ ໝັ້ນໃຈ ບໍລິການດີ • ຂອບໃຈທີ່ໃຊ້ບໍລິການ ' + shopName + ' ✨');
+
+            const modal = document.getElementById('pdf-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function previewSavedDocument(docId) {
+            const found = (window.documentsList || []).find(function(d) { return d.id === docId; });
+            if (!found) return;
+            window.currentDoc = JSON.parse(JSON.stringify(found));
+            populateEditorForm(window.currentDoc);
+            previewPDF();
+        }
+
+        function closePDFModal() {
+            const modal = document.getElementById('pdf-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function printDocumentPreview() {
+            previewPDF();
+            setTimeout(function() {
+                safeRun(function() { window.print(); });
+            }, 150);
+        }
+
+        function downloadImageDirect() {
+            const target = document.getElementById('pdf-preview-content');
+            if (!target) {
+                showToast('ບໍ່ພົບໜ້າໃບບິນ');
+                return;
+            }
+            if (typeof html2canvas !== 'function') {
+                showToast('ກຳລັງໂຫຼດໂມດູນສ້າງຮູບພາບ ກະລຸນາລອງໃໝ່');
+                return;
+            }
+            showToast('ກຳລັງສ້າງຮູບພາບໃບບິນ...');
+            html2canvas(target, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            }).then(function(canvas) {
+                const link = document.createElement('a');
+                const docId = (window.currentDoc && window.currentDoc.id) ? window.currentDoc.id : 'LY-FIXMAN';
+                link.download = docId + '.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('ດາວໂຫລດຮູບໃບບິນສຳເລັດ!');
+            }).catch(function() {
+                showToast('ບໍ່ສາມາດສ້າງຮູບພາບໄດ້ໃນຕອນນີ້');
+            });
+        }
+
+        function handleActionDispatch(actionName, el) {
+            switch (actionName) {
+                case 'nav-home':
+                    switchTab('home');
+                    renderDashboardAndLists();
+                    break;
+                case 'nav-docs':
+                    switchTab('docs');
+                    renderDashboardAndLists();
+                    break;
+                case 'nav-settings':
+                    switchTab('settings');
+                    break;
+                case 'new-doc':
+                    startNewDocument();
+                    break;
+                case 'quick-create':
+                    startNewDocument(el ? el.getAttribute('data-doc-type') : 'ໃບແຈ້ງລາຄາ');
+                    break;
+                case 'select-doc-type':
+                    setDocType(el ? el.getAttribute('data-doc-type') : 'ໃບຮັບເງິນ');
+                    break;
+                case 'filter-home-status':
+                    setHomeStatusFilter(el ? el.getAttribute('data-status') : 'ທັງໝົດ');
+                    break;
+                case 'filter-docs-type':
+                    setDocsTypeFilter(el ? el.getAttribute('data-type') : 'ທັງໝົດ');
+                    break;
+                case 'open-tech-intake':
+                    openTechIntakeModal();
+                    break;
+                case 'close-tech-intake':
+                    closeTechIntakeModal();
+                    break;
+                case 'sync-tech-items-from-form':
+                    syncTechItemsFromMainForm();
+                    break;
+                case 'save-tech-intake':
+                    saveTechIntake();
+                    break;
+                case 'add-item':
+                    addItemRow();
+                    break;
+                case 'remove-item':
+                    removeItemRow(parseInt(el ? el.getAttribute('data-item-idx') : '0', 10) || 0);
+                    break;
+                case 'save-doc':
+                    saveDocument();
+                    break;
+                case 'open-preview':
+                    previewPDF();
+                    break;
+                case 'close-preview':
+                    closePDFModal();
+                    break;
+                case 'print-doc':
+                    printDocumentPreview();
+                    break;
+                case 'download-png':
+                    downloadImageDirect();
+                    break;
+                case 'edit-doc':
+                    editDocument(el ? el.getAttribute('data-doc-id') : '');
+                    break;
+                case 'preview-saved-doc':
+                    previewSavedDocument(el ? el.getAttribute('data-doc-id') : '');
+                    break;
+                case 'delete-doc':
+                    deleteDocument(el ? el.getAttribute('data-doc-id') : '');
+                    break;
+                case 'sync-pull':
+                    syncFromGoogleSheet(true);
+                    break;
+                case 'save-sync-url':
+                    saveAndSyncWebAppUrl();
+                    break;
+                case 'save-shop':
+                    saveShopSettings();
+                    break;
+                case 'pick-logo': {
+                    const inp = document.getElementById('shop-logo-input');
+                    if (inp) inp.click();
+                    break;
+                }
+                case 'clear-logo':
+                    clearShopImage('logo');
+                    break;
+                case 'pick-qr': {
+                    const inp = document.getElementById('shop-qr-input');
+                    if (inp) inp.click();
+                    break;
+                }
+                case 'clear-qr':
+                    clearShopImage('qr');
+                    break;
+                case 'export-backup':
+                    exportJsonBackup();
+                    break;
+                case 'trigger-import-backup': {
+                    const inp = document.getElementById('import-backup-input');
+                    if (inp) inp.click();
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        function bindGlobalListeners() {
+            document.addEventListener('click', function(event) {
+                const actionEl = event.target && event.target.closest ? event.target.closest('[data-action]') : null;
+                if (!actionEl) return;
+                const actionName = actionEl.getAttribute('data-action');
+                safeRun(function() {
+                    handleActionDispatch(actionName, actionEl);
+                });
+            });
+
+            document.addEventListener('input', function(event) {
+                const target = event.target;
+                if (!target) return;
+
+                if (target.classList && target.classList.contains('item-input')) {
+                    const idx = parseInt(target.getAttribute('data-item-idx'), 10);
+                    const field = target.getAttribute('data-item-field');
+                    if (!isNaN(idx) && field && window.currentDoc && Array.isArray(window.currentDoc.items) && window.currentDoc.items[idx]) {
+                        if (field === 'price') {
+                            const cleanedPrice = stripLeadingZeroString(target.value);
+                            if (target.value !== cleanedPrice) target.value = cleanedPrice;
+                            window.currentDoc.items[idx].price = cleanedPrice === '' ? '' : parseCleanNumber(cleanedPrice, 0);
+                        } else if (field === 'qty') {
+                            const cleanedQty = stripLeadingZeroString(target.value);
+                            if (target.value !== cleanedQty) target.value = cleanedQty;
+                            window.currentDoc.items[idx].qty = cleanedQty === '' ? '' : Math.max(1, Math.floor(parseCleanNumber(cleanedQty, 1)));
+                        } else {
+                            window.currentDoc.items[idx][field] = target.value;
+                        }
+                        safeRun(calculateTotals);
+                    }
+                    return;
+                }
+
+                /* Live-link symptom from main form into Technician Intake modal */
+                if (target.id === 'device-symptom') {
+                    safeRun(function() {
+                        const symVal = target.value || '';
+                        if (window.currentDoc) {
+                            window.currentDoc.repair = Object.assign({}, window.currentDoc.repair || {}, { symptom: symVal });
+                            window.currentDoc.techIntake = Object.assign({}, window.currentDoc.techIntake || {}, { symptom: symVal });
+                        }
+                        const linkedEl = document.getElementById('tech-symptom-linked');
+                        if (linkedEl) linkedEl.value = symVal;
+                    });
+                    return;
+                }
+
+                if (target.id === 'doc-id-input') {
+                    const badge = document.getElementById('editor-doc-badge');
+                    if (badge) badge.innerText = target.value.trim() || 'REC-0001';
+                    return;
+                }
+
+                if (
+                    target.id === 'calc-discount' ||
+                    target.id === 'calc-exchange-rate' ||
+                    target.id === 'calc-deposit' ||
+                    target.id === 'doc-currency'
+                ) {
+                    safeRun(function() {
+                        if (
+                            target.id === 'calc-discount' ||
+                            target.id === 'calc-exchange-rate' ||
+                            target.id === 'calc-deposit'
+                        ) {
+                            const cleanedNum = stripLeadingZeroString(target.value);
+                            if (target.value !== cleanedNum) target.value = cleanedNum;
+                        }
+                        calculateTotals();
+                    });
+                }
+            });
+
+            const logoInput = document.getElementById('shop-logo-input');
+            if (logoInput) {
+                logoInput.addEventListener('change', function(e) {
+                    safeRun(function() { handleShopImageUpload(e, 'logo'); });
+                });
+            }
+
+            const qrInput = document.getElementById('shop-qr-input');
+            if (qrInput) {
+                qrInput.addEventListener('change', function(e) {
+                    safeRun(function() { handleShopImageUpload(e, 'qr'); });
+                });
+            }
+
+            const backupInput = document.getElementById('import-backup-input');
+            if (backupInput) {
+                backupInput.addEventListener('change', function(e) {
+                    safeRun(function() { importJsonBackup(e); });
+                });
+            }
+
+            const searchEl = document.getElementById('search-docs');
+            if (searchEl) {
+                searchEl.addEventListener('keyup', function() {
+                    safeRun(renderDashboardAndLists);
+                });
+            }
+        }
+
+        function initApp() {
+            safeRun(function() {
+                bindGlobalListeners();
+                loadLocalData();
+                renderDashboardAndLists();
+                switchTab('home');
+                syncFromGoogleSheet(false);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>
