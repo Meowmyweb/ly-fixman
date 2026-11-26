@@ -912,25 +912,42 @@
     .bill-table th {
       background: var(--primary);
       color: #ffffff;
-      padding: 7px 6px;
+      padding: 8px 8px;
       font-weight: 700;
       text-align: left;
+      white-space: nowrap;
     }
 
     .bill-table th:nth-child(2),
-    .bill-table td:nth-child(2),
-    .bill-table th:nth-child(4),
-    .bill-table td:nth-child(4) {
-      text-align: right;
+    .bill-table td:nth-child(2) {
+      text-align: left;
+      padding-right: 10px;
     }
 
     .bill-table th:nth-child(3),
     .bill-table td:nth-child(3) {
       text-align: center;
+      padding-left: 6px;
+      padding-right: 10px;
+    }
+
+    .bill-table th:nth-child(4),
+    .bill-table td:nth-child(4) {
+      text-align: right;
+      padding-left: 10px;
+      padding-right: 14px;
+      white-space: nowrap;
+    }
+
+    .bill-table th:nth-child(5),
+    .bill-table td:nth-child(5) {
+      text-align: right;
+      padding-left: 14px;
+      white-space: nowrap;
     }
 
     .bill-table td {
-      padding: 8px 6px;
+      padding: 9px 8px;
       border-bottom: 1px solid #eef2ef;
       vertical-align: top;
     }
@@ -991,10 +1008,16 @@
     .signature-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 22px;
+      gap: 28px;
+      margin-top: 38px;
       text-align: center;
       font-size: 12px;
+    }
+
+    .sig-line {
+      border-bottom: 1px dotted #64746d;
+      height: 36px;
+      margin-bottom: 6px;
     }
 
     .sig-line {
@@ -1283,6 +1306,7 @@
                 <option value="₭">ກີບ (₭)</option>
                 <option value="฿">ບາດ (฿)</option>
                 <option value="$">ໂດລາ ($)</option>
+                <option value="¥">ຢວນ (¥)</option>
               </select>
             </div>
             <div class="form-group">
@@ -1376,6 +1400,7 @@
                   <option value="₭">ກີບ (₭)</option>
                   <option value="฿">ບາດ (฿)</option>
                   <option value="$">ໂດລາ ($)</option>
+                  <option value="¥">ຢວນ (¥)</option>
                 </select>
               </div>
             </div>
@@ -3077,12 +3102,30 @@ function doPost(e) {
         const rate = parseNum(doc.exchangeRate);
         const { total, deposit } = computeDocTotals(doc);
 
+        const totalKip = toKipAmount(total, curr, rate);
+        const depositKip = toKipAmount(deposit, depCurr, rate);
+        const balanceKip = totalKip - depositKip;
+
         let depositInMain = deposit;
         if (depCurr !== curr) {
-          const depKip = toKipAmount(deposit, depCurr, rate);
-          depositInMain = curr === '₭' ? depKip : (rate > 0 ? depKip / rate : 0);
+          if (curr === '₭') {
+            depositInMain = depositKip;
+          } else if (rate > 0) {
+            depositInMain = depositKip / rate;
+          } else {
+            depositInMain = 0;
+          }
         }
         const balance = total - depositInMain;
+
+        let totalOther = 0;
+        let depositOther = 0;
+        let balanceOther = 0;
+        if (curr === '₭' && rate > 0) {
+          totalOther = total / rate;
+          depositOther = depositKip / rate;
+          balanceOther = balanceKip / rate;
+        }
 
         if (noEl) noEl.textContent = doc.docNo || doc.id;
         if (dateEl) dateEl.textContent = `ວັນທີ: ${doc.docDate || '-'}`;
@@ -3092,6 +3135,7 @@ function doPost(e) {
           const qty = parseNum(it.qty) || 1;
           const price = parseNum(it.price);
           const lineAmt = qty * price;
+
           return `
             <tr>
               <td class="en-num">${i + 1}</td>
@@ -3112,9 +3156,61 @@ function doPost(e) {
                ບໍ່ມີ QR Code
              </div>`;
 
-        const kipSubRow = (curr !== '₭' && rate > 0)
-          ? `<tr><td style="color:var(--muted);font-size:10.5px;">ທຽບເທົ່າກີບ:</td><td class="en-num" style="color:var(--info);font-size:10.5px;">${formatMoney(toKipAmount(total, curr, rate), '₭')}</td></tr>`
-          : '';
+        let calcRowsHtml = '';
+        if (curr !== '₭') {
+          calcRowsHtml = `
+            <tr>
+              <td>ລວມທັງໝົດ (${escapeHtml(curr)}):</td>
+              <td class="en-num" style="color:var(--primary);">${formatMoney(total, curr)}</td>
+            </tr>
+            <tr>
+              <td>ລວມທັງໝົດ (₭):</td>
+              <td class="en-num" style="color:var(--info);">${rate > 0 ? formatMoney(totalKip, '₭') : '₭ 0'}</td>
+            </tr>
+            <tr>
+              <td>ເງິນມັດຈຳ (${escapeHtml(depCurr)}):</td>
+              <td class="en-num" style="color:#9c7106;">${formatMoney(deposit, depCurr)}</td>
+            </tr>
+            ${depCurr !== '₭' ? `
+            <tr>
+              <td>ເງິນມັດຈຳ (₭):</td>
+              <td class="en-num" style="color:#9c7106;">${rate > 0 ? formatMoney(depositKip, '₭') : '₭ 0'}</td>
+            </tr>` : ''}
+            <tr>
+              <td>ຄ້າງຊຳລະ (${escapeHtml(curr)}):</td>
+              <td class="en-num" style="color:${balance > 0 ? 'var(--danger)' : 'var(--primary)'};">${formatMoney(balance, curr)}</td>
+            </tr>
+            <tr>
+              <td>ຄ້າງຊຳລະ (₭):</td>
+              <td class="en-num" style="color:${balanceKip > 0 ? 'var(--danger)' : 'var(--primary)'};">${rate > 0 ? formatMoney(balanceKip, '₭') : '₭ 0'}</td>
+            </tr>
+          `;
+        } else {
+          calcRowsHtml = `
+            <tr>
+              <td>ລວມທັງໝົດ (₭):</td>
+              <td class="en-num" style="color:var(--primary);">${formatMoney(total, '₭')}</td>
+            </tr>
+            ${rate > 0 ? `
+            <tr>
+              <td>ທຽບເທົ່າບາດ (฿):</td>
+              <td class="en-num" style="color:var(--info);">${formatMoney(totalOther, '฿')}</td>
+            </tr>` : ''}
+            <tr>
+              <td>ເງິນມັດຈຳ (${escapeHtml(depCurr)}):</td>
+              <td class="en-num" style="color:#9c7106;">${formatMoney(deposit, depCurr)}</td>
+            </tr>
+            <tr>
+              <td>ຄ້າງຊຳລະ (₭):</td>
+              <td class="en-num" style="color:${balance > 0 ? 'var(--danger)' : 'var(--primary)'};">${formatMoney(balance, '₭')}</td>
+            </tr>
+            ${rate > 0 ? `
+            <tr>
+              <td>ຄ້າງຊຳລະ (฿):</td>
+              <td class="en-num" style="color:${balanceOther > 0 ? 'var(--danger)' : 'var(--primary)'};">${formatMoney(balanceOther, '฿')}</td>
+            </tr>` : ''}
+          `;
+        }
 
         if (bodyEl) {
           bodyEl.innerHTML = `
@@ -3150,23 +3246,11 @@ function doPost(e) {
             <div class="bill-summary-card">
               ${qrHtml}
               <table class="bill-calc-table">
-                <tr>
-                  <td>ລວມທັງໝົດ:</td>
-                  <td class="en-num" style="color:var(--primary);">${formatMoney(total, curr)}</td>
-                </tr>
-                ${kipSubRow}
-                <tr>
-                  <td>ເງິນມັດຈຳ (${escapeHtml(depCurr)}):</td>
-                  <td class="en-num" style="color:#9c7106;">${formatMoney(deposit, depCurr)}</td>
-                </tr>
-                <tr>
-                  <td>ຄ້າງຊຳລະ:</td>
-                  <td class="en-num" style="color:${balance > 0 ? 'var(--danger)' : 'var(--primary)'};">${formatMoney(balance, curr)}</td>
-                </tr>
+                ${calcRowsHtml}
               </table>
             </div>
 
-            <div class="signature-row" style="margin-top:14px;">
+            <div class="signature-row" style="margin-top:38px;">
               <div>
                 <div class="sig-line"></div>
                 <div style="font-weight:700;">ຜູ້ຮັບເງິນ / ຜູ້ຮັບເຄື່ອງ</div>
