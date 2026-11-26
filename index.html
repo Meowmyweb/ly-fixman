@@ -1019,7 +1019,7 @@
   <div id="toast" class="toast"></div>
 
   <div class="app-shell">
-    <header class="topbar" id="appTopbar">
+    <header class="topbar" id="appTopbar" style="display:none;">
       <div class="brand-box">
         <div class="brand-logo" id="topBrandLogo">LY</div>
         <div class="brand-title-wrap">
@@ -1039,7 +1039,7 @@
       </div>
     </header>
 
-    <section id="loginScreen" class="login-screen" style="display:none;">
+    <section id="loginScreen" class="login-screen" style="display:flex;">
       <div class="login-card">
         <div class="login-lock-badge">🔒</div>
         <div class="login-shop-name" id="loginShopName">LY FIXMAN</div>
@@ -1067,7 +1067,7 @@
       </div>
     </section>
 
-    <main id="mainAppContent">
+    <main id="mainAppContent" style="display:none;">
       <section id="view-home" class="view-section active">
         <div class="summary-grid">
           <div class="stat-box green">
@@ -1606,7 +1606,7 @@ function doPost(e) {
       </section>
     </main>
 
-    <nav class="bottom-nav" id="bottomNav">
+    <nav class="bottom-nav" id="bottomNav" style="display:none;">
       <button type="button" class="nav-btn active" data-nav="home" id="navHome">
         <span class="nav-ico">🏠</span>
         <span>ໜ້າຫຼັກ</span>
@@ -1873,123 +1873,108 @@ function doPost(e) {
           localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(staffList));
           localStorage.setItem(STORAGE_KEYS.SHOP, JSON.stringify(shopInfo));
           localStorage.setItem(STORAGE_KEYS.OWNER_PIN, ownerPin);
-          localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(currentSession));
-        } catch (e) {}
-      }
-
-      function applyShopBranding() {
-        const name = (shopInfo.name || 'LY FIXMAN').trim() || 'LY FIXMAN';
-        const topName = document.getElementById('topBrandName');
-        const loginShop = document.getElementById('loginShopName');
-        const topLogo = document.getElementById('topBrandLogo');
-        const repName = document.getElementById('repShopName');
-        const repDetail = document.getElementById('repShopDetail');
-
-        if (topName) topName.textContent = name;
-        if (loginShop) loginShop.textContent = name;
-        if (topLogo) {
-          topLogo.innerHTML = shopInfo.logoDataUrl
-            ? `<img src="${escapeHtml(shopInfo.logoDataUrl)}" alt="Logo" />`
-            : escapeHtml((shopInfo.logoText || 'LY').trim() || 'LY');
-        }
-        if (repName) repName.textContent = name;
-        if (repDetail) {
-          const parts = [];
-          if (shopInfo.tagline) parts.push(shopInfo.tagline);
-          if (shopInfo.address) parts.push(shopInfo.address);
-          if (shopInfo.phone) parts.push('Tel: ' + shopInfo.phone);
-          repDetail.textContent = parts.join(' • ') || 'ລະບົບຈັດການຮ້ານສ້ອມແປງ';
+          localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({
+            isLoggedIn: false,
+            role: currentSession.role,
+            staffId: currentSession.staffId,
+            userName: currentSession.userName,
+            permissions: currentSession.permissions
+          }));
+        } catch (e) {
+          showToast('ບໍ່ສາມາດບັນທຶກຂໍ້ມູນລົງເຄື່ອງໄດ້');
         }
       }
 
-      function canAccessView(viewName) {
-        if (currentSession.role === 'owner') return true;
-        if (viewName === 'settings') return false;
-        if (viewName === 'printbill') return true;
-        const p = currentSession.permissions || DEFAULT_STAFF_PERMS;
-        if (viewName === 'home') return p.home !== false;
-        if (viewName === 'docs') return p.docs !== false;
-        if (viewName === 'editor') return p.editor !== false;
-        if (viewName === 'techs') return p.techs !== false;
-        if (viewName === 'reports') return p.reports !== false;
-        return true;
+      function isOwner() {
+        return currentSession.isLoggedIn && currentSession.role === 'owner';
       }
 
-      function applySessionUI() {
-        const isOwner = currentSession.role === 'owner';
-        const topbar = document.getElementById('appTopbar');
-        const loginScreen = document.getElementById('loginScreen');
-        const mainContent = document.getElementById('mainAppContent');
-        const bottomNav = document.getElementById('bottomNav');
-        const badge = document.getElementById('btnSwitchRoleBadge');
-        const badgeText = document.getElementById('roleBadgeText');
-        const btnTopSettings = document.getElementById('btnTopSettings');
-        const navSettings = document.getElementById('navSettings');
-        const navHome = document.getElementById('navHome');
-        const navDocs = document.getElementById('navDocs');
-        const navNew = document.getElementById('navNew');
-        const navTechs = document.getElementById('navTechs');
-        const navReports = document.getElementById('navReports');
-
-        if (!currentSession.isLoggedIn) {
-          if (topbar) topbar.style.display = 'none';
-          if (loginScreen) loginScreen.style.display = 'block';
-          if (mainContent) mainContent.style.display = 'none';
-          if (bottomNav) bottomNav.style.display = 'none';
-        } else {
-          if (topbar) topbar.style.display = 'flex';
-          if (loginScreen) loginScreen.style.display = 'none';
-          if (mainContent) mainContent.style.display = 'block';
-          if (bottomNav) bottomNav.style.display = 'grid';
-        }
-
-        if (badge) {
-          badge.className = 'role-badge ' + (isOwner ? 'role-owner' : 'role-staff');
-        }
-        if (badgeText) {
-          badgeText.textContent = isOwner
-            ? `👑 ${currentSession.userName || 'ເຈົ້າຂອງຮ້ານ'}`
-            : `👤 ${currentSession.userName || 'ພະນັກງານ'}`;
-        }
-
-        if (btnTopSettings) btnTopSettings.style.display = isOwner ? 'inline-flex' : 'none';
-        if (navSettings) navSettings.style.display = isOwner ? 'flex' : 'none';
-
-        const p = currentSession.permissions || DEFAULT_STAFF_PERMS;
-        if (navHome) navHome.style.display = (isOwner || p.home !== false) ? 'flex' : 'none';
-        if (navDocs) navDocs.style.display = (isOwner || p.docs !== false) ? 'flex' : 'none';
-        if (navNew) navNew.style.display = (isOwner || p.editor !== false) ? 'flex' : 'none';
-        if (navTechs) navTechs.style.display = (isOwner || p.techs !== false) ? 'flex' : 'none';
-        if (navReports) navReports.style.display = (isOwner || p.reports !== false) ? 'flex' : 'none';
-
-        const activeView = document.querySelector('.view-section.active');
-        if (activeView && !isOwner && activeView.id === 'view-settings') {
-          switchView('home');
-        }
+      function canAccess(key) {
+        if (!currentSession.isLoggedIn) return false;
+        if (isOwner()) return true;
+        if (key === 'settings') return false;
+        if (key === 'printbill') return true;
+        return currentSession.permissions[key] !== false;
       }
 
       function populateLoginAccountOptions() {
         const sel = document.getElementById('loginAccountSelect');
         if (!sel) return;
-        const prevVal = sel.value || 'owner';
-        let html = `
-          <option value="owner">👑 ເຈົ້າຂອງຮ້ານ</option>
-          <option value="staff_guest">👤 ພະນັກງານ</option>
-        `;
+        const prevVal = sel.value;
+        let html = '<option value="owner">👑 ເຈົ້າຂອງຮ້ານ</option>';
         staffList.forEach(st => {
-          html += `<option value="staff:${escapeHtml(st.id)}">👤 ${escapeHtml(st.name)}</option>`;
+          html += `<option value="staff_${escapeHtml(st.id)}">👤 ${escapeHtml(st.name)}${st.position ? ' (' + escapeHtml(st.position) + ')' : ''}</option>`;
         });
+        html += '<option value="staff_guest">👤 ພະນັກງານ</option>';
         sel.innerHTML = html;
-        if (Array.from(sel.options).some(o => o.value === prevVal)) {
+        if (prevVal && sel.querySelector(`option[value="${CSS.escape(prevVal)}"]`)) {
           sel.value = prevVal;
         }
       }
 
-      function performLogin(selectedAccount, enteredPin) {
-        const pinVal = String(enteredPin || '').trim();
-        if (selectedAccount === 'owner') {
+      function applySessionUI() {
+        const loginScreen = document.getElementById('loginScreen');
+        const topbar = document.getElementById('appTopbar');
+        const mainApp = document.getElementById('mainAppContent');
+        const bottomNav = document.getElementById('bottomNav');
+
+        const loginShopEl = document.getElementById('loginShopName');
+        if (loginShopEl) {
+          loginShopEl.textContent = shopInfo.name || 'LY FIXMAN';
+        }
+
+        if (!currentSession.isLoggedIn) {
+          if (loginScreen) loginScreen.style.display = 'flex';
+          if (topbar) topbar.style.display = 'none';
+          if (mainApp) mainApp.style.display = 'none';
+          if (bottomNav) bottomNav.style.display = 'none';
+          return;
+        }
+
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (topbar) topbar.style.display = 'flex';
+        if (mainApp) mainApp.style.display = 'block';
+        if (bottomNav) bottomNav.style.display = 'grid';
+
+        const badgeBtn = document.getElementById('btnSwitchRoleBadge');
+        const badgeText = document.getElementById('roleBadgeText');
+        if (badgeBtn && badgeText) {
+          if (isOwner()) {
+            badgeBtn.className = 'role-badge role-owner';
+            badgeText.textContent = '👑 ເຈົ້າຂອງຮ້ານ';
+          } else {
+            badgeBtn.className = 'role-badge role-staff';
+            badgeText.textContent = `👤 ${currentSession.userName || 'ພະນັກງານ'}`;
+          }
+        }
+
+        const navHome = document.getElementById('navHome');
+        const navDocs = document.getElementById('navDocs');
+        const navNew = document.getElementById('navNew');
+        const navPrintBill = document.getElementById('navPrintBill');
+        const navTechs = document.getElementById('navTechs');
+        const navReports = document.getElementById('navReports');
+        const navSettings = document.getElementById('navSettings');
+
+        if (navHome) navHome.style.display = canAccess('home') ? 'flex' : 'none';
+        if (navDocs) navDocs.style.display = canAccess('docs') ? 'flex' : 'none';
+        if (navNew) navNew.style.display = canAccess('editor') ? 'flex' : 'none';
+        if (navPrintBill) navPrintBill.style.display = canAccess('printbill') ? 'flex' : 'none';
+        if (navTechs) navTechs.style.display = canAccess('techs') ? 'flex' : 'none';
+        if (navReports) navReports.style.display = canAccess('reports') ? 'flex' : 'none';
+        if (navSettings) navSettings.style.display = isOwner() ? 'flex' : 'none';
+
+        const btnTopSettings = document.getElementById('btnTopSettings');
+        if (btnTopSettings) btnTopSettings.style.display = isOwner() ? 'inline-flex' : 'none';
+      }
+
+      function handleLoginSubmit() {
+        const accVal = (document.getElementById('loginAccountSelect')?.value || 'owner');
+        const pinVal = (document.getElementById('loginPinInput')?.value || '').trim();
+
+        if (accVal === 'owner') {
           if (pinVal !== ownerPin) {
-            showToast('❌ ລະຫັດ PIN ເຈົ້າຂອງຮ້ານບໍ່ຖືກຕ້ອງ!');
+            showToast('ລະຫັດ PIN ເຈົ້າຂອງຮ້ານບໍ່ຖືກຕ້ອງ');
             return;
           }
           currentSession = {
@@ -2006,1499 +1991,295 @@ function doPost(e) {
               deleteDoc: true
             }
           };
+          const pinInp = document.getElementById('loginPinInput');
+          if (pinInp) pinInp.value = '';
           saveLocalData();
           applySessionUI();
           renderAll();
           switchView('home');
-          showToast('👑 ເຂົ້າສູ່ລະບົບສິດເຈົ້າຂອງຮ້ານສຳເລັດ!');
+          showToast('ເຂົ້າສູ່ລະບົບສິດ ເຈົ້າຂອງຮ້ານ');
           return;
         }
 
-        if (selectedAccount === 'staff_guest') {
+        if (accVal === 'staff_guest') {
           currentSession = {
             isLoggedIn: true,
             role: 'staff',
-            staffId: 'guest',
-            userName: 'ພະນັກງານທົ່ວໄປ',
+            staffId: 'staff_guest',
+            userName: 'ພະນັກງານ',
             permissions: { ...DEFAULT_STAFF_PERMS }
           };
+          const pinInp = document.getElementById('loginPinInput');
+          if (pinInp) pinInp.value = '';
           saveLocalData();
           applySessionUI();
           renderAll();
           switchView('home');
-          showToast('👤 ເຂົ້າສູ່ລະບົບສິດພະນັກງານແລ້ວ');
+          showToast('ເຂົ້າສູ່ລະບົບສິດ ພະນັກງານ');
           return;
         }
 
-        if (selectedAccount && selectedAccount.startsWith('staff:')) {
-          const stId = selectedAccount.slice(6);
-          const st = staffList.find(item => item.id === stId);
-          if (!st) {
-            showToast('ບໍ່ພົບບັນຊີພະນັກງານນີ້');
-            return;
-          }
-          if (st.pin && String(st.pin).trim() !== '' && pinVal !== String(st.pin).trim()) {
-            showToast('❌ ລະຫັດ PIN ຂອງພະນັກງານບໍ່ຖືກຕ້ອງ!');
-            return;
-          }
-          currentSession = {
-            isLoggedIn: true,
-            role: 'staff',
-            staffId: st.id,
-            userName: st.name || 'ພະນັກງານ',
-            permissions: { ...DEFAULT_STAFF_PERMS, ...(st.permissions || {}) }
-          };
-          saveLocalData();
-          applySessionUI();
-          renderAll();
-          const firstView = canAccessView('home') ? 'home' : 'docs';
-          switchView(firstView);
-          showToast(`👤 ຍິນດີຕ້ອນຮັບ ${currentSession.userName}`);
+        const staffId = accVal.replace(/^staff_/, '');
+        const found = staffList.find(s => String(s.id) === String(staffId));
+        if (!found) {
+          showToast('ບໍ່ພົບບັນຊີພະນັກງານ');
+          return;
         }
+        if (found.pin && String(found.pin).trim() !== '' && pinVal !== String(found.pin).trim()) {
+          showToast('ລະຫັດ PIN ຂອງພະນັກງານບໍ່ຖືກຕ້ອງ');
+          return;
+        }
+
+        currentSession = {
+          isLoggedIn: true,
+          role: 'staff',
+          staffId: found.id,
+          userName: found.name || 'ພະນັກງານ',
+          permissions: { ...DEFAULT_STAFF_PERMS, ...(found.permissions || {}) }
+        };
+        const pinInp = document.getElementById('loginPinInput');
+        if (pinInp) pinInp.value = '';
+        saveLocalData();
+        applySessionUI();
+        renderAll();
+        switchView('home');
+        showToast(`ຍິນດີຕ້ອນຮັບ ${currentSession.userName}`);
       }
 
-      function openLoginScreen() {
+      function logoutToLoginScreen() {
         populateLoginAccountOptions();
-        const pinInput = document.getElementById('loginPinInput');
-        if (pinInput) pinInput.value = '';
         currentSession.isLoggedIn = false;
         saveLocalData();
         applySessionUI();
       }
 
       function computeDocTotals(doc) {
-        const currency = doc.currency || '₭';
-        const depositCurrency = doc.depositCurrency || currency;
-        const rate = parseNum(doc.exchangeRate);
         const items = Array.isArray(doc.items) ? doc.items : [];
         const total = items.reduce((sum, it) => sum + parseNum(it.qty) * parseNum(it.price), 0);
         const deposit = parseNum(doc.deposit);
+        const balance = total - deposit;
+        return { total, deposit, balance };
+      }
 
-        let depositInDocCurr = deposit;
-        if (depositCurrency !== currency) {
-          if (currency === '₭' && rate > 0) {
-            depositInDocCurr = deposit * rate;
-          } else if (depositCurrency === '₭' && rate > 0) {
-            depositInDocCurr = deposit / rate;
+      function toKipAmount(amount, currency, exchangeRate) {
+        const amt = parseNum(amount);
+        const curr = currency || '₭';
+        if (curr === '₭') return amt;
+        const rate = parseNum(exchangeRate);
+        return rate > 0 ? amt * rate : 0;
+      }
+
+      function normalizeAnyDateToIso(val) {
+        if (!val) return '';
+        if (val instanceof Date && !isNaN(val.getTime())) {
+          const y = val.getFullYear();
+          const m = String(val.getMonth() + 1).padStart(2, '0');
+          const d = String(val.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+        const s = String(val).trim();
+        if (!s) return '';
+
+        const isoMatch = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (isoMatch) {
+          return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+        }
+
+        const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (dmyMatch) {
+          return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, '0')}-${dmyMatch[1].padStart(2, '0')}`;
+        }
+
+        const ymMatch = s.match(/^(\d{4})[\/\-](\d{1,2})$/);
+        if (ymMatch) {
+          return `${ymMatch[1]}-${ymMatch[2].padStart(2, '0')}-01`;
+        }
+
+        return s;
+      }
+
+      function getDocIsoDate(doc) {
+        if (!doc || typeof doc !== 'object') return '';
+        const candidate = doc.docDate || doc.date || doc.createdAt || '';
+        const iso = normalizeAnyDateToIso(candidate);
+        if (iso) return iso;
+        if (doc.updatedAt) {
+          const dt = new Date(Number(doc.updatedAt));
+          if (!isNaN(dt.getTime())) {
+            return normalizeAnyDateToIso(dt);
           }
         }
-
-        const balance = total - depositInDocCurr;
-        const totalKip = currency === '₭' ? total : (rate > 0 ? total * rate : 0);
-        const depositKip = depositCurrency === '₭' ? deposit : (rate > 0 ? deposit * rate : 0);
-        const balanceKip = currency === '₭' ? balance : (rate > 0 ? balance * rate : 0);
-
-        return {
-          currency,
-          depositCurrency,
-          rate,
-          total,
-          deposit,
-          balance,
-          totalKip,
-          depositKip,
-          balanceKip
-        };
+        return '';
       }
 
-      function getNextDocNumber(type) {
-        const prefix = type === 'repair' ? 'REP-' : 'REC-';
-        let maxNum = 0;
-        docs.forEach(d => {
-          const no = String(d.docNo || '');
-          if (no.toUpperCase().startsWith(prefix)) {
-            const n = parseInt(no.slice(prefix.length), 10);
-            if (Number.isFinite(n) && n > maxNum) maxNum = n;
-          }
-        });
-        return prefix + String(maxNum + 1).padStart(4, '0');
-      }
-
-      function renderDashboardStats() {
-        const now = new Date();
-        const curMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const curYearStr = String(now.getFullYear());
-
-        let monthTotalKip = 0;
-        let depositTotalKip = 0;
-        let balanceTotalKip = 0;
-        let yearTotalKip = 0;
-
-        docs.forEach(d => {
-          const t = computeDocTotals(d);
-          const dateStr = String(d.docDate || '');
-          const isSameYear = dateStr.startsWith(curYearStr);
-          const isSameMonth = dateStr.startsWith(curMonthStr);
-
-          const docTotalK = t.currency === '₭' ? t.total : (t.rate > 0 ? t.totalKip : 0);
-          const docDepK = t.depositCurrency === '₭' ? t.deposit : (t.rate > 0 ? t.depositKip : 0);
-          const docBalK = t.currency === '₭' ? t.balance : (t.rate > 0 ? t.balanceKip : 0);
-
-          if (isSameYear) yearTotalKip += docTotalK;
-          if (isSameMonth) {
-            monthTotalKip += docTotalK;
-            depositTotalKip += docDepK;
-            if (docBalK > 0) balanceTotalKip += docBalK;
-          }
-        });
-
-        const elM = document.getElementById('dashMonthTotal');
-        const elD = document.getElementById('dashDepositTotal');
-        const elB = document.getElementById('dashBalanceTotal');
-        const elY = document.getElementById('dashYearTotal');
-
-        if (elM) elM.textContent = formatMoney(monthTotalKip, '₭');
-        if (elD) elD.textContent = formatMoney(depositTotalKip, '₭');
-        if (elB) elB.textContent = formatMoney(balanceTotalKip, '₭');
-        if (elY) elY.textContent = formatMoney(yearTotalKip, '₭');
-      }
-
-      function renderDocCard(d) {
-        const t = computeDocTotals(d);
-        const isRepair = d.docType === 'repair';
-        const badgeClass = isRepair ? 'badge-repair' : 'badge-receipt';
-        const badgeLabel = isRepair ? '🔧 ໃບຮັບສ້ອມ' : '🧾 ໃບຮັບເງິນ';
-        const canDelete = currentSession.role === 'owner' || (currentSession.permissions && currentSession.permissions.deleteDoc === true);
-
-        const kipSub = (t.currency !== '₭' && t.rate > 0)
-          ? ` <span style="color:#0d6efd;font-size:11px;">(${escapeHtml(formatMoney(t.totalKip, '₭'))})</span>`
-          : '';
-
-        return `
-          <div class="doc-item">
-            <div class="doc-top">
-              <div>
-                <span class="doc-id en-num">${escapeHtml(d.docNo || d.id)}</span>
-                <span class="doc-type-badge ${badgeClass}">${badgeLabel}</span>
-              </div>
-              <span class="doc-type-badge" style="background:#f1f3f2;color:#33413b;">${escapeHtml(d.docStatus || '-')}</span>
-            </div>
-            <div class="doc-meta en-num">
-              📅 ${escapeHtml(d.docDate || '-')} • 👤 ${escapeHtml(d.custName || 'ລູກຄ້າທົ່ວໄປ')}
-              ${d.custPhone ? ' (' + escapeHtml(d.custPhone) + ')' : ''}
-              ${d.techName ? ' • 👷 ' + escapeHtml(d.techName) : ''}
-              ${d.deviceModel ? ' • 💻 ' + escapeHtml(d.deviceModel) : ''}
-            </div>
-            <div class="doc-foot">
-              <div class="doc-amount en-num">
-                ລວມ: ${escapeHtml(formatMoney(t.total, t.currency))}${kipSub}
-              </div>
-              <div class="doc-actions">
-                <button type="button" class="btn btn-outline btn-sm" data-print-doc="${escapeHtml(d.id)}">🖨️</button>
-                <button type="button" class="btn btn-outline btn-sm" data-edit-doc="${escapeHtml(d.id)}">✏️ ແກ້ໄຂ</button>
-                ${canDelete ? `<button type="button" class="btn btn-danger btn-sm" data-del-doc="${escapeHtml(d.id)}">🗑️</button>` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      function renderHome() {
-        renderDashboardStats();
-        const listEl = document.getElementById('homeDocList');
-        const countEl = document.getElementById('homeDocCount');
-        if (!listEl) return;
-
-        const filtered = docs.filter(d => {
-          if (currentFilter === 'repair') return d.docType === 'repair';
-          if (currentFilter === 'receipt') return d.docType === 'receipt';
-          if (currentFilter === 'done') {
-            return ['ສຳເລັດແລ້ວ', 'ຈ່າຍຄົບແລ້ວ', 'ສົ່ງມອບແລ້ວ'].includes(d.docStatus);
-          }
-          if (currentFilter === 'pending') {
-            return !['ສຳເລັດແລ້ວ', 'ຈ່າຍຄົບແລ້ວ', 'ສົ່ງມອບແລ້ວ'].includes(d.docStatus);
-          }
-          return true;
-        });
-
-        if (countEl) countEl.textContent = `${filtered.length} ລາຍການ`;
-        if (!filtered.length) {
-          listEl.innerHTML = '<div class="empty-state">ຍັງບໍ່ມີລາຍການເອກະສານ</div>';
-          return;
+      function matchesPeriodPrefix(doc, prefix) {
+        if (!prefix) return true;
+        const iso = getDocIsoDate(doc);
+        if (iso && iso.startsWith(prefix)) return true;
+        const rawDate = String(doc?.docDate || doc?.date || '').trim();
+        if (prefix.length === 4 && rawDate.includes(prefix)) return true;
+        if (prefix.length === 7) {
+          const [py, pm] = prefix.split('-');
+          const dmyPrefix = `${pm}/${py}`;
+          if (rawDate.endsWith(dmyPrefix) || rawDate.endsWith(`${pm}-${py}`)) return true;
         }
-        listEl.innerHTML = filtered.slice(0, 15).map(renderDocCard).join('');
-      }
-
-      function renderAllDocs() {
-        const listEl = document.getElementById('allDocList');
-        const q = (document.getElementById('docSearchInput')?.value || '').trim().toLowerCase();
-        if (!listEl) return;
-
-        const filtered = docs.filter(d => {
-          if (currentDocTypeFilter !== 'all' && d.docType !== currentDocTypeFilter) return false;
-          if (!q) return true;
-          const hay = [
-            d.docNo, d.docDate, d.custName, d.custPhone, d.custAddr, d.custSocial,
-            d.deviceModel, d.serialNo, d.symptom, d.techName, d.docStatus
-          ].join(' ').toLowerCase();
-          return hay.includes(q);
-        });
-
-        if (!filtered.length) {
-          listEl.innerHTML = '<div class="empty-state">ບໍ່ພົບເອກະສານທີ່ຄົ້ນຫາ</div>';
-          return;
-        }
-        listEl.innerHTML = filtered.map(renderDocCard).join('');
-      }
-
-      function populateReceiptTechSelect(selectedName = '') {
-        const sel = document.getElementById('fReceiptTechName');
-        if (!sel) return;
-        let html = '<option value="">-- ເລືອກຊ່າງຮັບຜິດຊອບ --</option>';
-        technicians.forEach(t => {
-          html += `<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}${t.specialty ? ' (' + escapeHtml(t.specialty) + ')' : ''}</option>`;
-        });
-        if (selectedName && !technicians.some(t => t.name === selectedName)) {
-          html += `<option value="${escapeHtml(selectedName)}">${escapeHtml(selectedName)}</option>`;
-        }
-        sel.innerHTML = html;
-        sel.value = selectedName || '';
-      }
-
-      function setDocTypeUI(type) {
-        currentDocType = type === 'repair' ? 'repair' : 'receipt';
-        const btnRec = document.getElementById('btnTypeReceipt');
-        const btnRep = document.getElementById('btnTypeRepair');
-        const techBanner = document.getElementById('techBannerBox');
-        const repairFields = document.getElementById('repairDeviceFields');
-        const badge = document.getElementById('editorDocBadge');
-
-        if (btnRec) btnRec.classList.toggle('active', currentDocType === 'receipt');
-        if (btnRep) btnRep.classList.toggle('active', currentDocType === 'repair');
-        if (techBanner) techBanner.style.display = currentDocType === 'repair' ? 'flex' : 'none';
-        if (repairFields) repairFields.style.display = currentDocType === 'repair' ? 'block' : 'none';
-
-        if (!editingId) {
-          const docNoInput = document.getElementById('fDocNo');
-          const nextNo = getNextDocNumber(currentDocType);
-          if (docNoInput) docNoInput.value = nextNo;
-          if (badge) {
-            badge.textContent = nextNo;
-            badge.className = 'doc-type-badge en-num ' + (currentDocType === 'repair' ? 'badge-repair' : 'badge-receipt');
-          }
-        }
-        updateTechBannerSummary();
-      }
-
-      function updateTechBannerSummary() {
-        const el = document.getElementById('techBannerSummary');
-        if (!el) return;
-        const parts = [];
-        if (draftTech.techName) parts.push('ຊ່າງ: ' + draftTech.techName);
-        if (draftTech.deviceModel) parts.push('ລຸ້ນ: ' + draftTech.deviceModel);
-        if (draftTech.techStatus) parts.push('ສະຖານະ: ' + draftTech.techStatus);
-        el.textContent = parts.length ? parts.join(' • ') : 'ຍັງບໍ່ໄດ້ບັນທຶກຂໍ້ມູນຊ່າງ';
-      }
-
-      function renderItemsEditor() {
-        const container = document.getElementById('itemsContainer');
-        if (!container) return;
-        if (!draftItems.length) {
-          draftItems = [{ name: '', qty: 1, price: 0 }];
-        }
-        container.innerHTML = draftItems.map((it, idx) => `
-          <div class="item-row-card" data-item-idx="${idx}">
-            <div class="item-row-top">
-              <span>ລາຍການທີ ${idx + 1}</span>
-              ${draftItems.length > 1 ? `<button type="button" class="btn btn-danger btn-sm" style="padding:3px 8px;" data-remove-item="${idx}">ລຶບ</button>` : ''}
-            </div>
-            <div class="form-group" style="margin-bottom:6px;">
-              <input type="text" data-item-field="name" data-idx="${idx}" value="${escapeHtml(it.name || '')}" placeholder="ຊື່ລາຍການສິນຄ້າ / ຄ່າບໍລິການ" />
-            </div>
-            <div class="form-row">
-              <div class="form-group" style="margin-bottom:0;">
-                <label>ຈຳນວນ</label>
-                <input type="text" inputmode="decimal" class="en-num" data-item-field="qty" data-idx="${idx}" value="${escapeHtml(String(it.qty ?? 1))}" />
-              </div>
-              <div class="form-group" style="margin-bottom:0;">
-                <label>ລາຄາ</label>
-                <input type="text" inputmode="decimal" class="en-num" data-item-field="price" data-idx="${idx}" value="${escapeHtml(String(it.price ?? 0))}" />
-              </div>
-            </div>
-          </div>
-        `).join('');
-        recalcTotals();
-      }
-
-      function updateExchangeRateUI() {
-        const curr = document.getElementById('fCurrency')?.value || '₭';
-        const depCurr = document.getElementById('fDepositCurrency')?.value || curr;
-        const rateWrap = document.getElementById('exchangeRateWrap');
-        const infoLine = document.getElementById('exchangeRateInfoLine');
-        const needsRate = curr !== '₭' || depCurr !== '₭';
-
-        if (rateWrap) rateWrap.style.display = needsRate ? 'block' : 'none';
-        if (infoLine) {
-          if (needsRate) {
-            const rate = parseNum(document.getElementById('fExchangeRate')?.value);
-            infoLine.style.display = 'block';
-            infoLine.textContent = rate > 0
-              ? `ອັດຕາແລກປ່ຽນທີ່ໃຊ້: 1 ຫົວໜ່ວຍ = ${formatMoney(rate, '₭')}`
-              : 'ກະລຸນາປ້ອນອັດຕາແລກປ່ຽນເປັນເງິນກີບ (₭)';
-          } else {
-            infoLine.style.display = 'none';
-            infoLine.textContent = '';
-          }
-        }
-      }
-
-      function recalcTotals() {
-        updateExchangeRateUI();
-        const curr = document.getElementById('fCurrency')?.value || '₭';
-        const depCurr = document.getElementById('fDepositCurrency')?.value || curr;
-        const rate = parseNum(document.getElementById('fExchangeRate')?.value);
-        const deposit = parseNum(document.getElementById('fDeposit')?.value);
-
-        const tempDoc = {
-          currency: curr,
-          depositCurrency: depCurr,
-          exchangeRate: rate,
-          items: draftItems,
-          deposit
-        };
-        const t = computeDocTotals(tempDoc);
-
-        const totalEl = document.getElementById('fTotal');
-        const balEl = document.getElementById('fBalance');
-        const noteEl = document.getElementById('balanceStatusNote');
-        const kipBox = document.getElementById('docKipSummaryBox');
-
-        if (totalEl) totalEl.textContent = formatMoney(t.total, curr);
-        if (balEl) {
-          balEl.textContent = formatMoney(t.balance, curr);
-          balEl.style.color = t.balance > 0 ? 'var(--danger)' : 'var(--primary)';
-        }
-        if (noteEl) {
-          if (t.balance > 0) noteEl.textContent = `ຍັງຄ້າງຊຳລະ: ${formatMoney(t.balance, curr)}`;
-          else if (t.balance < 0) noteEl.textContent = `ຈ່າຍເກີນ / ເງິນທອນ: ${formatMoney(Math.abs(t.balance), curr)}`;
-          else noteEl.textContent = 'ຊຳລະຄົບຖ້ວນແລ້ວ';
-        }
-        if (kipBox) {
-          if (curr !== '₭' && rate > 0) {
-            kipBox.textContent = `ທຽບເທົ່າກີບ: ລວມ ${formatMoney(t.totalKip, '₭')} • ມັດຈຳ ${formatMoney(t.depositKip, '₭')} • ຄ້າງ ${formatMoney(t.balanceKip, '₭')}`;
-          } else if (depCurr !== '₭' && rate > 0) {
-            kipBox.textContent = `ມັດຈຳທຽບເທົ່າກີບ: ${formatMoney(t.depositKip, '₭')}`;
-          } else {
-            kipBox.textContent = '';
-          }
-        }
-      }
-
-      function openNewEditor(presetType = 'receipt') {
-        if (!canAccessView('editor')) {
-          showToast('🚫 ບັນຊີຂອງທ່ານບໍ່ມີສິດສ້າງ/ແກ້ໄຂເອກະສານ');
-          return;
-        }
-        editingId = null;
-        const today = new Date().toISOString().slice(0, 10);
-        document.getElementById('editorFormTitle').textContent = 'ສ້າງເອກະສານໃໝ່';
-        document.getElementById('fDocDate').value = today;
-        document.getElementById('fCurrency').value = '₭';
-        document.getElementById('fDepositCurrency').value = '₭';
-        document.getElementById('fExchangeRate').value = '0';
-        document.getElementById('fDocStatus').value = presetType === 'repair' ? 'ກຳລັງສ້ອມ' : 'ຈ່າຍຄົບແລ້ວ';
-        document.getElementById('fCustName').value = '';
-        document.getElementById('fCustPhone').value = '';
-        document.getElementById('fCustAddr').value = '';
-        document.getElementById('fCustSocial').value = '';
-        document.getElementById('fDeviceModel').value = '';
-        document.getElementById('fSerialNo').value = '';
-        document.getElementById('fSymptom').value = '';
-        document.getElementById('fDeposit').value = '0';
-
-        populateReceiptTechSelect('');
-        draftTech = {
-          deviceModel: '',
-          serialNo: '',
-          symptom: '',
-          techName: '',
-          techStatus: 'ກຳລັງສ້ອມ'
-        };
-        draftItems = [{ name: '', qty: 1, price: 0 }];
-        setDocTypeUI(presetType);
-        renderItemsEditor();
-        switchView('editor');
-      }
-
-      function editDoc(docId) {
-        if (!canAccessView('editor')) {
-          showToast('🚫 ບັນຊີຂອງທ່ານບໍ່ມີສິດແກ້ໄຂເອກະສານ');
-          return;
-        }
-        const d = docs.find(item => item.id === docId);
-        if (!d) return;
-
-        editingId = d.id;
-        document.getElementById('editorFormTitle').textContent = 'ແກ້ໄຂເອກະສານ';
-        document.getElementById('fDocNo').value = d.docNo || '';
-        document.getElementById('fDocDate').value = d.docDate || new Date().toISOString().slice(0, 10);
-        document.getElementById('fCurrency').value = d.currency || '₭';
-        document.getElementById('fDepositCurrency').value = d.depositCurrency || d.currency || '₭';
-        document.getElementById('fExchangeRate').value = String(d.exchangeRate ?? 0);
-        document.getElementById('fDocStatus').value = d.docStatus || 'ກຳລັງສ້ອມ';
-        document.getElementById('fCustName').value = d.custName || '';
-        document.getElementById('fCustPhone').value = d.custPhone || '';
-        document.getElementById('fCustAddr').value = d.custAddr || '';
-        document.getElementById('fCustSocial').value = d.custSocial || '';
-        document.getElementById('fDeviceModel').value = d.deviceModel || '';
-        document.getElementById('fSerialNo').value = d.serialNo || '';
-        document.getElementById('fSymptom').value = d.symptom || '';
-        document.getElementById('fDeposit').value = String(d.deposit ?? 0);
-
-        const badge = document.getElementById('editorDocBadge');
-        if (badge) {
-          badge.textContent = d.docNo || d.id;
-          badge.className = 'doc-type-badge en-num ' + (d.docType === 'repair' ? 'badge-repair' : 'badge-receipt');
-        }
-
-        populateReceiptTechSelect(d.techName || '');
-        draftTech = {
-          deviceModel: d.deviceModel || '',
-          serialNo: d.serialNo || '',
-          symptom: d.symptom || '',
-          techName: d.techName || '',
-          techStatus: d.techStatus || d.docStatus || 'ກຳລັງສ້ອມ'
-        };
-        draftItems = (Array.isArray(d.items) && d.items.length)
-          ? d.items.map(it => ({ name: it.name || '', qty: parseNum(it.qty) || 1, price: parseNum(it.price) }))
-          : [{ name: '', qty: 1, price: 0 }];
-
-        setDocTypeUI(d.docType || 'receipt');
-        renderItemsEditor();
-        switchView('editor');
-      }
-
-      function deleteDoc(docId) {
-        const canDelete = currentSession.role === 'owner' || (currentSession.permissions && currentSession.permissions.deleteDoc === true);
-        if (!canDelete) {
-          showToast('🚫 ບັນຊີຂອງທ່ານບໍ່ມີສິດລຶບເອກະສານ');
-          return;
-        }
-        docs = docs.filter(d => d.id !== docId);
-        saveLocalData();
-        renderAll();
-        showToast('🗑️ ລຶບເອກະສານແລ້ວ');
-      }
-
-      function saveCurrentDocument() {
-        if (!canAccessView('editor')) {
-          showToast('🚫 ບັນຊີຂອງທ່ານບໍ່ມີສິດບັນທຶກເອກະສານ');
-          return;
-        }
-
-        const docNo = (document.getElementById('fDocNo')?.value || '').trim() || getNextDocNumber(currentDocType);
-        const docDate = (document.getElementById('fDocDate')?.value || '').trim() || new Date().toISOString().slice(0, 10);
-        const currency = document.getElementById('fCurrency')?.value || '₭';
-        const depositCurrency = document.getElementById('fDepositCurrency')?.value || currency;
-        const exchangeRate = parseNum(document.getElementById('fExchangeRate')?.value);
-        const docStatus = document.getElementById('fDocStatus')?.value || 'ກຳລັງສ້ອມ';
-        const custName = (document.getElementById('fCustName')?.value || '').trim() || 'ລູກຄ້າທົ່ວໄປ';
-        const custPhone = (document.getElementById('fCustPhone')?.value || '').trim();
-        const custAddr = (document.getElementById('fCustAddr')?.value || '').trim();
-        const custSocial = (document.getElementById('fCustSocial')?.value || '').trim();
-
-        const deviceModel = currentDocType === 'repair'
-          ? ((document.getElementById('fDeviceModel')?.value || '').trim() || draftTech.deviceModel || '')
-          : '';
-        const serialNo = currentDocType === 'repair'
-          ? ((document.getElementById('fSerialNo')?.value || '').trim() || draftTech.serialNo || '')
-          : '';
-        const symptom = currentDocType === 'repair'
-          ? ((document.getElementById('fSymptom')?.value || '').trim() || draftTech.symptom || '')
-          : '';
-
-        const receiptTech = (document.getElementById('fReceiptTechName')?.value || '').trim();
-        const techName = currentDocType === 'repair'
-          ? (draftTech.techName || receiptTech || '')
-          : (receiptTech || '');
-
-        const cleanedItems = draftItems
-          .map(it => ({
-            name: String(it.name || '').trim(),
-            qty: parseNum(it.qty) || 1,
-            price: parseNum(it.price)
-          }))
-          .filter(it => it.name || it.price > 0);
-
-        const finalItems = cleanedItems.length ? cleanedItems : [{ name: 'ຄ່າບໍລິການ', qty: 1, price: 0 }];
-        const deposit = parseNum(document.getElementById('fDeposit')?.value);
-
-        const record = {
-          id: editingId || ('doc_' + Date.now()),
-          docNo,
-          docType: currentDocType,
-          docDate,
-          currency,
-          depositCurrency,
-          exchangeRate,
-          docStatus,
-          custName,
-          custPhone,
-          custAddr,
-          custSocial,
-          deviceModel,
-          serialNo,
-          symptom,
-          techName,
-          techStatus: draftTech.techStatus || docStatus,
-          items: finalItems,
-          deposit,
-          updatedAt: Date.now()
-        };
-
-        const totals = computeDocTotals(record);
-        record.total = totals.total;
-        record.balance = totals.balance;
-
-        if (editingId) {
-          const idx = docs.findIndex(d => d.id === editingId);
-          if (idx >= 0) docs[idx] = record;
-          else docs.unshift(record);
-        } else {
-          docs.unshift(record);
-        }
-
-        saveLocalData();
-        renderAll();
-        openPrintBill(record.id);
-        showToast('💾 ບັນທຶກເອກະສານສຳເລັດ!');
-      }
-
-      function openTechModal() {
-        const modal = document.getElementById('techModal');
-        if (!modal) return;
-        document.getElementById('mDeviceModel').value = document.getElementById('fDeviceModel')?.value || draftTech.deviceModel || '';
-        document.getElementById('mSerialNo').value = document.getElementById('fSerialNo')?.value || draftTech.serialNo || '';
-        document.getElementById('mSymptom').value = document.getElementById('fSymptom')?.value || draftTech.symptom || '';
-        document.getElementById('mTechName').value = draftTech.techName || document.getElementById('fReceiptTechName')?.value || '';
-        document.getElementById('mTechStatus').value = draftTech.techStatus || document.getElementById('fDocStatus')?.value || 'ກຳລັງສ້ອມ';
-
-        const chipsEl = document.getElementById('techQuickChips');
-        if (chipsEl) {
-          chipsEl.innerHTML = technicians.map(t =>
-            `<button type="button" class="chip" data-pick-tech="${escapeHtml(t.name)}">${escapeHtml(t.name)}</button>`
-          ).join('');
-        }
-        modal.classList.add('open');
-      }
-
-      function closeTechModal() {
-        const modal = document.getElementById('techModal');
-        if (modal) modal.classList.remove('open');
-      }
-
-      function saveTechModal() {
-        draftTech = {
-          deviceModel: (document.getElementById('mDeviceModel')?.value || '').trim(),
-          serialNo: (document.getElementById('mSerialNo')?.value || '').trim(),
-          symptom: (document.getElementById('mSymptom')?.value || '').trim(),
-          techName: (document.getElementById('mTechName')?.value || '').trim(),
-          techStatus: document.getElementById('mTechStatus')?.value || 'ກຳລັງສ້ອມ'
-        };
-
-        if (document.getElementById('fDeviceModel')) document.getElementById('fDeviceModel').value = draftTech.deviceModel;
-        if (document.getElementById('fSerialNo')) document.getElementById('fSerialNo').value = draftTech.serialNo;
-        if (document.getElementById('fSymptom')) document.getElementById('fSymptom').value = draftTech.symptom;
-        if (document.getElementById('fDocStatus')) document.getElementById('fDocStatus').value = draftTech.techStatus;
-        if (draftTech.techName) {
-          populateReceiptTechSelect(draftTech.techName);
-        }
-
-        updateTechBannerSummary();
-        closeTechModal();
-        showToast('✅ ບັນທຶກຂໍ້ມູນຝ່າຍຊ່າງແລ້ວ');
-      }
-
-      function clearTechForm() {
-        document.getElementById('tmEditId').value = '';
-        document.getElementById('tmName').value = '';
-        document.getElementById('tmPhone').value = '';
-        document.getElementById('tmAddress').value = '';
-        document.getElementById('tmJoinDate').value = '';
-        document.getElementById('tmSpecialty').value = '';
-        document.getElementById('tmEducation').value = '';
-        document.getElementById('tmExperience').value = '';
-        document.getElementById('techFormTitle').textContent = '👷 ຈັດການຂໍ້ມູນຊ່າງສ້ອມ';
-      }
-
-      function saveTechProfile() {
-        const name = (document.getElementById('tmName')?.value || '').trim();
-        if (!name) {
-          showToast('ກະລຸນາປ້ອນຊື່ຊ່າງ');
-          return;
-        }
-        const editId = document.getElementById('tmEditId')?.value || '';
-        const payload = {
-          id: editId || ('tech_' + Date.now()),
-          name,
-          phone: (document.getElementById('tmPhone')?.value || '').trim(),
-          address: (document.getElementById('tmAddress')?.value || '').trim(),
-          joinDate: (document.getElementById('tmJoinDate')?.value || '').trim(),
-          specialty: (document.getElementById('tmSpecialty')?.value || '').trim(),
-          education: (document.getElementById('tmEducation')?.value || '').trim(),
-          experience: (document.getElementById('tmExperience')?.value || '').trim()
-        };
-
-        if (editId) {
-          const idx = technicians.findIndex(t => t.id === editId);
-          if (idx >= 0) technicians[idx] = payload;
-          else technicians.push(payload);
-        } else {
-          technicians.push(payload);
-        }
-
-        saveLocalData();
-        clearTechForm();
-        renderTechManager();
-        populateReportTechSelect();
-        showToast('💾 ບັນທຶກຂໍ້ມູນຊ່າງສ້ອມແລ້ວ');
-      }
-
-      function editTechProfile(techId) {
-        const t = technicians.find(item => item.id === techId);
-        if (!t) return;
-        document.getElementById('tmEditId').value = t.id;
-        document.getElementById('tmName').value = t.name || '';
-        document.getElementById('tmPhone').value = t.phone || '';
-        document.getElementById('tmAddress').value = t.address || '';
-        document.getElementById('tmJoinDate').value = t.joinDate || '';
-        document.getElementById('tmSpecialty').value = t.specialty || '';
-        document.getElementById('tmEducation').value = t.education || '';
-        document.getElementById('tmExperience').value = t.experience || '';
-        document.getElementById('techFormTitle').textContent = '✏️ ແກ້ໄຂຂໍ້ມູນຊ່າງສ້ອມ';
-      }
-
-      function deleteTechProfile(techId) {
-        technicians = technicians.filter(t => t.id !== techId);
-        saveLocalData();
-        renderTechManager();
-        populateReportTechSelect();
-        showToast('🗑️ ລຶບຂໍ້ມູນຊ່າງແລ້ວ');
-      }
-
-      function renderTechManager() {
-        const listEl = document.getElementById('techManagerList');
-        const cntEl = document.getElementById('techListCount');
-        if (cntEl) cntEl.textContent = `${technicians.length} ຄົນ`;
-        if (!listEl) return;
-
-        if (!technicians.length) {
-          listEl.innerHTML = '<div class="empty-state">ຍັງບໍ່ມີຂໍ້ມູນຊ່າງສ້ອມ</div>';
-          return;
-        }
-
-        listEl.innerHTML = technicians.map(t => `
-          <div class="doc-item">
-            <div class="doc-top">
-              <div>
-                <div class="doc-id">👷 ${escapeHtml(t.name)}</div>
-                <div style="font-size:11.5px;color:var(--primary);font-weight:700;">
-                  ${t.specialty ? 'ວິຊາສະເພາະ: ' + escapeHtml(t.specialty) : ''}
-                  ${t.education ? ' • ຊັ້ນຈົບ: ' + escapeHtml(t.education) : ''}
-                </div>
-              </div>
-              <div class="doc-actions">
-                <button type="button" class="btn btn-outline btn-sm" data-edit-tech="${escapeHtml(t.id)}">✏️</button>
-                <button type="button" class="btn btn-danger btn-sm" data-del-tech="${escapeHtml(t.id)}">🗑️</button>
-              </div>
-            </div>
-            <div class="doc-meta en-num" style="margin-bottom:0;">
-              ${t.phone ? '📞 ' + escapeHtml(t.phone) : ''}
-              ${t.address ? ' • 📍 ' + escapeHtml(t.address) : ''}
-              ${t.joinDate ? ' • 📅 ເຂົ້າວຽກ: ' + escapeHtml(t.joinDate) : ''}
-              ${t.experience ? ' • 💼 ປະສົບການ: ' + escapeHtml(t.experience) : ''}
-            </div>
-          </div>
-        `).join('');
-      }
-
-      function populateReportTechSelect() {
-        const sel = document.getElementById('repTechSelect');
-        if (!sel) return;
-        const prev = sel.value || 'ALL';
-        const names = new Set(technicians.map(t => t.name).filter(Boolean));
-        docs.forEach(d => {
-          if (d.techName) names.add(d.techName);
-        });
-
-        let html = '<option value="ALL">ຊ່າງທັງໝົດ</option>';
-        Array.from(names).forEach(n => {
-          html += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
-        });
-        sel.innerHTML = html;
-        if (Array.from(sel.options).some(o => o.value === prev)) {
-          sel.value = prev;
-        }
-      }
-
-      function renderReports() {
-        populateReportTechSelect();
-        const periodType = document.getElementById('repPeriodType')?.value || 'month';
-        const monthVal = document.getElementById('repMonthInput')?.value || new Date().toISOString().slice(0, 7);
-        const yearVal = String(document.getElementById('repYearInput')?.value || new Date().getFullYear());
-        const selectedTech = document.getElementById('repTechSelect')?.value || 'ALL';
-
-        const monthWrap = document.getElementById('repMonthWrap');
-        const yearWrap = document.getElementById('repYearWrap');
-        const techFilterWrap = document.getElementById('repTechFilterWrap');
-        const finBody = document.getElementById('financeReportBody');
-        const techBody = document.getElementById('techReportBody');
-        const titleEl = document.getElementById('repDocTitle');
-        const periodLabelEl = document.getElementById('repPeriodLabel');
-
-        if (monthWrap) monthWrap.style.display = periodType === 'month' ? 'block' : 'none';
-        if (yearWrap) yearWrap.style.display = periodType === 'year' ? 'block' : 'none';
-        if (techFilterWrap) techFilterWrap.style.display = currentReportTab === 'tech' ? 'block' : 'none';
-
-        const prefix = periodType === 'month' ? monthVal : yearVal;
-        const matchedDocs = docs.filter(d => String(d.docDate || '').startsWith(prefix));
-
-        if (periodLabelEl) {
-          periodLabelEl.textContent = periodType === 'month'
-            ? `ປະຈຳເດືອນ: ${monthVal}`
-            : `ປະຈຳປີ: ${yearVal}`;
-        }
-
-        if (currentReportTab === 'finance') {
-          if (titleEl) titleEl.textContent = periodType === 'month' ? 'ບົດລາຍງານສະຫຼຸບຍອດເງິນລາຍເດືອນ' : 'ບົດລາຍງານສະຫຼຸບຍອດເງິນລາຍປີ';
-          if (finBody) finBody.style.display = 'block';
-          if (techBody) techBody.style.display = 'none';
-
-          let sumTotalK = 0;
-          let sumDepK = 0;
-          let sumBalK = 0;
-
-          matchedDocs.forEach(d => {
-            const t = computeDocTotals(d);
-            sumTotalK += t.currency === '₭' ? t.total : (t.rate > 0 ? t.totalKip : 0);
-            sumDepK += t.depositCurrency === '₭' ? t.deposit : (t.rate > 0 ? t.depositKip : 0);
-            const balK = t.currency === '₭' ? t.balance : (t.rate > 0 ? t.balanceKip : 0);
-            if (balK > 0) sumBalK += balK;
-          });
-
-          const rowsHtml = matchedDocs.length
-            ? matchedDocs.map(d => {
-                const t = computeDocTotals(d);
-                return `
-                  <tr>
-                    <td class="en-num">${escapeHtml(d.docNo || '-')}</td>
-                    <td class="en-num">${escapeHtml(d.docDate || '-')}</td>
-                    <td>${escapeHtml(d.custName || '-')}</td>
-                    <td class="en-num" style="text-align:right;font-weight:700;">${escapeHtml(formatMoney(t.total, t.currency))}</td>
-                  </tr>
-                `;
-              }).join('')
-            : '<tr><td colspan="4" style="text-align:center;color:var(--muted);">ບໍ່ມີຂໍ້ມູນໃນຊ່ວງເວລານີ້</td></tr>';
-
-          if (finBody) {
-            finBody.innerHTML = `
-              <div class="summary-grid" style="margin-bottom:10px;">
-                <div class="stat-box green">
-                  <div class="stat-label">ຍອດລວມ (₭)</div>
-                  <div class="stat-val en-num">${escapeHtml(formatMoney(sumTotalK, '₭'))}</div>
-                </div>
-                <div class="stat-box gold">
-                  <div class="stat-label">ມັດຈຳ (₭)</div>
-                  <div class="stat-val en-num">${escapeHtml(formatMoney(sumDepK, '₭'))}</div>
-                </div>
-                <div class="stat-box red">
-                  <div class="stat-label">ຄ້າງຊຳລະ (₭)</div>
-                  <div class="stat-val en-num">${escapeHtml(formatMoney(sumBalK, '₭'))}</div>
-                </div>
-                <div class="stat-box blue">
-                  <div class="stat-label">ຈຳນວນເອກະສານ</div>
-                  <div class="stat-val en-num">${matchedDocs.length} ບິນ</div>
-                </div>
-              </div>
-              <table class="bill-table">
-                <thead>
-                  <tr>
-                    <th>ເລກທີ</th>
-                    <th>ວັນທີ</th>
-                    <th>ລູກຄ້າ</th>
-                    <th style="text-align:right;">ຍອດລວມ</th>
-                  </tr>
-                </thead>
-                <tbody>${rowsHtml}</tbody>
-              </table>
-            `;
-          }
-        } else {
-          if (titleEl) titleEl.textContent = periodType === 'month' ? 'ບົດລາຍງານຜົນງານຊ່າງລາຍເດືອນ' : 'ບົດລາຍງານຜົນງານຊ່າງລາຍປີ';
-          if (finBody) finBody.style.display = 'none';
-          if (techBody) techBody.style.display = 'block';
-
-          const techDocs = matchedDocs.filter(d => {
-            if (!d.techName) return false;
-            if (selectedTech !== 'ALL' && d.techName !== selectedTech) return false;
-            return true;
-          });
-
-          const yearDocs = docs.filter(d => {
-            if (!String(d.docDate || '').startsWith(yearVal)) return false;
-            if (!d.techName) return false;
-            if (selectedTech !== 'ALL' && d.techName !== selectedTech) return false;
-            return true;
-          });
-
-          let periodAmtK = 0;
-          techDocs.forEach(d => {
-            const t = computeDocTotals(d);
-            periodAmtK += t.currency === '₭' ? t.total : (t.rate > 0 ? t.totalKip : 0);
-          });
-
-          let yearAmtK = 0;
-          yearDocs.forEach(d => {
-            const t = computeDocTotals(d);
-            yearAmtK += t.currency === '₭' ? t.total : (t.rate > 0 ? t.totalKip : 0);
-          });
-
-          const listHtml = techDocs.length
-            ? techDocs.map(d => {
-                const t = computeDocTotals(d);
-                return `
-                  <div style="border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:8px;">
-                    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:12.5px;">
-                      <span>👷 ${escapeHtml(d.techName)} • <span class="en-num">${escapeHtml(d.docNo || '')}</span></span>
-                      <span class="en-num" style="color:var(--primary);">${escapeHtml(formatMoney(t.total, t.currency))}</span>
-                    </div>
-                    <div style="font-size:11.5px;color:var(--muted);" class="en-num">
-                      📅 ${escapeHtml(d.docDate || '-')} ${d.deviceModel ? '• ' + escapeHtml(d.deviceModel) : ''} • ${escapeHtml(d.docStatus || '')}
-                    </div>
-                  </div>
-                `;
-              }).join('')
-            : '<div class="empty-state">ບໍ່ມີຜົນງານຊ່າງໃນຊ່ວງເວລານີ້</div>';
-
-          if (techBody) {
-            techBody.innerHTML = `
-              <div style="background:var(--gold-light);border:1px solid #efd896;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
-                <div style="font-size:13px;font-weight:700;color:#8a6400;">
-                  ຊ່າງ: ${escapeHtml(selectedTech === 'ALL' ? 'ຊ່າງທັງໝົດ' : selectedTech)}
-                </div>
-                <div style="font-size:12px;margin-top:4px;" class="en-num">
-                  • ຜົນງານຊ່ວງທີ່ເລືອກ (${escapeHtml(prefix)}): <strong>${techDocs.length} ງານ</strong> • ເງິນທີ່ເຮັດໄດ້: <strong style="color:var(--primary);">${escapeHtml(formatMoney(periodAmtK, '₭'))}</strong>
-                </div>
-                <div style="font-size:12px;margin-top:2px;" class="en-num">
-                  • ຜົນງານລວມທັງປີ (${escapeHtml(yearVal)}): <strong>${yearDocs.length} ງານ</strong> • ເງິນລວມທັງປີ: <strong style="color:#084298;">${escapeHtml(formatMoney(yearAmtK, '₭'))}</strong>
-                </div>
-              </div>
-              ${listHtml}
-            `;
-          }
-        }
-      }
-
-      async function downloadReportPNG() {
-        const area = document.getElementById('reportCaptureArea');
-        if (!area || typeof html2canvas !== 'function') {
-          showToast('ບໍ່ສາມາດສ້າງຮູບ PNG ໄດ້');
-          return;
-        }
-        try {
-          showToast('⏳ ກຳລັງສ້າງຮູບບົດລາຍງານ...');
-          const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff' });
-          const link = document.createElement('a');
-          link.download = `LY_FIXMAN_Report_${Date.now()}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-          showToast('✅ ດາວໂຫຼດຮູບ PNG ສຳເລັດ!');
-        } catch (err) {
-          showToast('❌ ເກີດຂໍ້ຜິດພາດໃນການສ້າງຮູບ PNG');
-        }
-      }
-
-      function populatePrintDocSelect(selectedId = '') {
-        const sel = document.getElementById('printDocSelect');
-        if (!sel) return;
-        if (!docs.length) {
-          sel.innerHTML = '<option value="">-- ຍັງບໍ່ມີເອກະສານ --</option>';
-          return;
-        }
-        sel.innerHTML = docs.map(d =>
-          `<option value="${escapeHtml(d.id)}">${escapeHtml(d.docNo || d.id)} - ${escapeHtml(d.docType === 'repair' ? 'ໃບຮັບສ້ອມ' : 'ໃບຮັບເງິນ')} (${escapeHtml(d.custName || 'ລູກຄ້າ')})</option>`
-        ).join('');
-        if (selectedId && docs.some(d => d.id === selectedId)) {
-          sel.value = selectedId;
-        } else if (docs[0]) {
-          sel.value = docs[0].id;
-        }
-      }
-
-      function renderPrintBillPreview() {
-        const sel = document.getElementById('printDocSelect');
-        const bodyEl = document.getElementById('billPrintBody');
-        const titleEl = document.getElementById('billPrintTitle');
-        const shopNameEl = document.getElementById('billPrintShopName');
-        const shopTagEl = document.getElementById('billPrintShopTagline');
-        const shopAddrEl = document.getElementById('billPrintShopAddr');
-        const shopContactEl = document.getElementById('billPrintShopContact');
-        const logoBoxEl = document.getElementById('billPrintLogoBox');
-        const docNoEl = document.getElementById('billPrintDocNo');
-        const docDateEl = document.getElementById('billPrintDocDate');
-        const footerNoteEl = document.getElementById('billPrintFooterNote');
-        if (!bodyEl || !sel) return;
-
-        const shopName = (shopInfo.name || 'LY FIXMAN').trim() || 'LY FIXMAN';
-        shopNameEl.textContent = shopName;
-        if (shopTagEl) shopTagEl.textContent = shopInfo.tagline || 'ບໍລິການສ້ອມແປງອຸປະກອນໄອທີ';
-        if (shopAddrEl) shopAddrEl.textContent = shopInfo.address || '';
-
-        const contactArr = [];
-        if (shopInfo.phone) contactArr.push('Tel: ' + shopInfo.phone);
-        if (shopInfo.social) contactArr.push('FB: ' + shopInfo.social);
-        if (shopContactEl) shopContactEl.textContent = contactArr.join(' | ');
-
-        if (logoBoxEl) {
-          logoBoxEl.innerHTML = shopInfo.logoDataUrl
-            ? `<img src="${escapeHtml(shopInfo.logoDataUrl)}" alt="Logo" />`
-            : escapeHtml((shopInfo.logoText || 'LY').trim() || 'LY');
-        }
-
-        if (footerNoteEl) {
-          const tagTxt = (shopInfo.tagline || 'ວ່ອງໄວ ໝັ້ນໃຈ ບໍລິການດີ').trim();
-          footerNoteEl.textContent = `✨ ${tagTxt} • ຂອບໃຈທີ່ໃຊ້ບໍລິການ ${shopName} ✨`;
-        }
-
-        const doc = docs.find(d => d.id === sel.value);
-        if (!doc) {
-          if (docNoEl) docNoEl.textContent = 'INV-0000';
-          if (docDateEl) docDateEl.textContent = 'ວັນທີ: -';
-          titleEl.textContent = 'ໃບບິນ';
-          bodyEl.innerHTML = '<div class="empty-state">ກະລຸນາສ້າງ ຫຼື ເລືອກເອກະສານເພື່ອພິມ</div>';
-          return;
-        }
-
-        const t = computeDocTotals(doc);
-        const isRepair = doc.docType === 'repair';
-        if (docNoEl) docNoEl.textContent = doc.docNo || doc.id;
-        if (docDateEl) docDateEl.textContent = 'ວັນທີ: ' + (doc.docDate || '-');
-        titleEl.textContent = isRepair ? 'ໃບຮັບສ້ອມ' : 'ໃບຮັບເງິນ';
-
-        const rowsHtml = (Array.isArray(doc.items) && doc.items.length)
-          ? doc.items.map(it => {
-              const q = parseNum(it.qty);
-              const p = parseNum(it.price);
-              return `
-                <tr>
-                  <td>${escapeHtml(it.name || 'ລາຍການສິນຄ້າ / ບໍລິການ')}</td>
-                  <td class="en-num">${escapeHtml(formatMoney(p, t.currency))}</td>
-                  <td class="en-num">${q}</td>
-                  <td class="en-num"><strong>${escapeHtml(formatMoney(q * p, t.currency))}</strong></td>
-                </tr>
-              `;
-            }).join('')
-          : `
-            <tr>
-              <td colspan="4" style="text-align:center;color:var(--muted);">ບໍ່ມີລາຍການສິນຄ້າ / ບໍລິການ</td>
-            </tr>
-          `;
-
-        const qrMarkup = shopInfo.qrDataUrl
-          ? `
-            <div class="bill-qr-box">
-              <div style="font-size:10px;font-weight:700;color:var(--primary);margin-bottom:3px;">ສະແກນຊຳລະເງິນ</div>
-              <img src="${escapeHtml(shopInfo.qrDataUrl)}" alt="QR" />
-              ${shopInfo.qrLabel ? `<div style="font-size:9.5px;color:var(--muted);margin-top:3px;">${escapeHtml(shopInfo.qrLabel)}</div>` : ''}
-            </div>
-          `
-          : `
-            <div class="bill-qr-box" style="display:flex;flex-direction:column;justify-content:center;min-height:112px;">
-              <div style="font-size:10px;font-weight:700;color:var(--primary);">ສະແກນຊຳລະເງິນ</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:4px;">ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ QR</div>
-            </div>
-          `;
-
-        const rateRowHtml = (t.currency !== '₭' && t.rate > 0)
-          ? `
-            <tr>
-              <td style="color:#0d6efd;font-weight:700;">ອັດຕາແລກປ່ຽນ (1 ${escapeHtml(t.currency)}):</td>
-              <td class="en-num" style="color:#0d6efd;">${escapeHtml(formatMoney(t.rate, '₭'))}</td>
-            </tr>
-            <tr>
-              <td style="color:#0d6efd;font-weight:700;">ລວມເປັນເງິນກີບ:</td>
-              <td class="en-num" style="color:#0d6efd;">${escapeHtml(formatMoney(t.totalKip, '₭'))}</td>
-            </tr>
-          `
-          : '';
-
-        const depositInKipVal = t.depositCurrency === '₭' ? t.deposit : t.depositKip;
-        const depositRowHtml = `
-          <tr>
-            <td style="color:#b47b00;font-weight:700;">ເງິນມັດຈຳ (${escapeHtml(t.depositCurrency)}):</td>
-            <td class="en-num" style="color:#b47b00;">${escapeHtml(formatMoney(t.deposit, t.depositCurrency))}</td>
-          </tr>
-          ${t.depositCurrency !== '₭' ? `
-            <tr>
-              <td style="color:#b47b00;font-weight:600;">ມັດຈຳ (ທຽບເທົ່າ ₭):</td>
-              <td class="en-num" style="color:#b47b00;">${escapeHtml(formatMoney(depositInKipVal, '₭'))}</td>
-            </tr>
-          ` : ''}
-        `;
-
-        const balanceDisplayStr = (t.currency !== '₭' && t.rate > 0)
-          ? `${escapeHtml(formatMoney(t.balanceKip, '₭'))} (${escapeHtml(formatMoney(t.balance, t.currency))})`
-          : escapeHtml(formatMoney(t.balance, t.currency));
-
-        bodyEl.innerHTML = `
-          <div class="bill-info-panel">
-            <div>
-              <div style="font-size:10.5px;color:#0f5132;font-weight:700;">ລູກຄ້າ / BILL TO</div>
-              <div style="font-size:14px;font-weight:700;margin-top:2px;">${escapeHtml(doc.custName || 'ລູກຄ້າທົ່ວໄປ')}</div>
-              ${doc.custAddr ? `<div style="color:var(--muted);">${escapeHtml(doc.custAddr)}</div>` : ''}
-              ${doc.custPhone ? `<div class="en-num" style="margin-top:2px;"><strong>Tel:</strong> ${escapeHtml(doc.custPhone)}</div>` : ''}
-              ${doc.custSocial ? `<div style="color:var(--muted);"><strong>Social:</strong> ${escapeHtml(doc.custSocial)}</div>` : ''}
-            </div>
-            <div class="bill-info-right">
-              <div style="font-size:10.5px;color:#b47b00;font-weight:700;">ຂໍ້ມູນອຸປະກອນຊ່ອມ & ສະຖານະ</div>
-              ${doc.deviceModel ? `<div style="font-weight:700;margin-top:2px;">${escapeHtml(doc.deviceModel)}</div>` : ''}
-              <div class="en-num" style="color:var(--muted);">SN: ${escapeHtml(doc.serialNo || '-')}</div>
-              ${doc.symptom ? `<div style="color:var(--muted);font-style:italic;">ອາການ: ${escapeHtml(doc.symptom)}</div>` : ''}
-              ${doc.techName ? `<div style="font-size:11px;color:var(--primary);font-weight:700;margin-top:2px;">ຊ່າງ: ${escapeHtml(doc.techName)}</div>` : ''}
-              <div style="font-size:11px;color:#198754;font-weight:700;margin-top:2px;">🛡️ ສະຖານະ: ${escapeHtml(doc.docStatus || '-')}</div>
-            </div>
-          </div>
-
-          <table class="bill-table">
-            <thead>
-              <tr>
-                <th>ລາຍການ / DESCRIPTION</th>
-                <th>ລາຄາ / PRICE</th>
-                <th>ຈຳນວນ</th>
-                <th>ລວມ / AMOUNT</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
-
-          <div class="bill-summary-card">
-            ${qrMarkup}
-            <table class="bill-calc-table">
-              <tr>
-                <td style="color:var(--muted);">ຍອດລວມ:</td>
-                <td class="en-num">${escapeHtml(formatMoney(t.total, t.currency))}</td>
-              </tr>
-              <tr>
-                <td style="color:var(--primary);font-weight:700;font-size:12.5px;">ລວມທັງໝົດ:</td>
-                <td class="en-num" style="color:var(--primary);font-size:13px;">${escapeHtml(formatMoney(t.total, t.currency))}</td>
-              </tr>
-              ${rateRowHtml}
-              ${depositRowHtml}
-              <tr style="border-top:1px solid #d7e2db;">
-                <td style="color:var(--danger);font-weight:700;font-size:13px;padding-top:5px;">ຍອດຄ້າງຊຳລະ:</td>
-                <td class="en-num" style="color:var(--danger);font-size:13.5px;padding-top:5px;">${balanceDisplayStr}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div class="signature-row" style="margin-top:18px;padding-top:4px;">
-            <div>
-              <div class="sig-line"></div>
-              <div style="font-weight:700;">ຜູ້ຮັບເງິນ / ຜູ້ຊ່ອມ</div>
-            </div>
-            <div>
-              <div class="sig-line"></div>
-              <div style="font-weight:700;">ຜູ້ຈ່າຍເງິນ</div>
-            </div>
-          </div>
-        `;
-      }
-
-      function openPrintBill(docId = '') {
-        populatePrintDocSelect(docId);
-        switchView('printbill');
-        renderPrintBillPreview();
-      }
-
-      function loadShopSettingsForm() {
-        document.getElementById('setShopName').value = shopInfo.name || '';
-        document.getElementById('setShopTagline').value = shopInfo.tagline || '';
-        document.getElementById('setShopPhone').value = shopInfo.phone || '';
-        document.getElementById('setShopSocial').value = shopInfo.social || '';
-        document.getElementById('setShopAddress').value = shopInfo.address || '';
-        document.getElementById('setShopLogoText').value = shopInfo.logoText || 'LY';
-        document.getElementById('setShopQrLabel').value = shopInfo.qrLabel || '';
-
-        const logoWrap = document.getElementById('setShopLogoPreviewWrap');
-        const logoImg = document.getElementById('setShopLogoPreviewImg');
-        if (shopInfo.logoDataUrl && logoWrap && logoImg) {
-          logoWrap.style.display = 'flex';
-          logoImg.src = shopInfo.logoDataUrl;
-        } else if (logoWrap) {
-          logoWrap.style.display = 'none';
-        }
-
-        const qrWrap = document.getElementById('setShopQrPreviewWrap');
-        const qrImg = document.getElementById('setShopQrPreviewImg');
-        const qrCap = document.getElementById('setShopQrPreviewCaption');
-        if (shopInfo.qrDataUrl && qrWrap && qrImg) {
-          qrWrap.style.display = 'block';
-          qrImg.src = shopInfo.qrDataUrl;
-          if (qrCap) qrCap.textContent = shopInfo.qrLabel || '';
-        } else if (qrWrap) {
-          qrWrap.style.display = 'none';
-        }
-      }
-
-      function saveShopSettings() {
-        if (currentSession.role !== 'owner') {
-          showToast('👑 ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນທີ່ແກ້ໄຂໄດ້');
-          return;
-        }
-        shopInfo.name = (document.getElementById('setShopName')?.value || '').trim() || 'LY FIXMAN';
-        shopInfo.tagline = (document.getElementById('setShopTagline')?.value || '').trim();
-        shopInfo.phone = (document.getElementById('setShopPhone')?.value || '').trim();
-        shopInfo.social = (document.getElementById('setShopSocial')?.value || '').trim();
-        shopInfo.address = (document.getElementById('setShopAddress')?.value || '').trim();
-        shopInfo.logoText = (document.getElementById('setShopLogoText')?.value || '').trim() || 'LY';
-        shopInfo.qrLabel = (document.getElementById('setShopQrLabel')?.value || '').trim();
-
-        saveLocalData();
-        applyShopBranding();
-        loadShopSettingsForm();
-        renderPrintBillPreview();
-        showToast('💾 ບັນທຶກຂໍ້ມູນຮ້ານສຳເລັດ!');
-      }
-
-      function clearStaffForm() {
-        document.getElementById('staffEditId').value = '';
-        document.getElementById('stName').value = '';
-        document.getElementById('stPhone').value = '';
-        document.getElementById('stPosition').value = '';
-        document.getElementById('stPin').value = '';
-        document.getElementById('permHome').checked = true;
-        document.getElementById('permEditor').checked = true;
-        document.getElementById('permDocs').checked = true;
-        document.getElementById('permTechs').checked = true;
-        document.getElementById('permReports').checked = true;
-        document.getElementById('permDelete').checked = false;
-      }
-
-      function saveStaffProfile() {
-        if (currentSession.role !== 'owner') {
-          showToast('👑 ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນ');
-          return;
-        }
-        const name = (document.getElementById('stName')?.value || '').trim();
-        if (!name) {
-          showToast('ກະລຸນາປ້ອນຊື່ພະນັກງານ');
-          return;
-        }
-        const editId = document.getElementById('staffEditId')?.value || '';
-        const item = {
-          id: editId || ('staff_' + Date.now()),
-          name,
-          phone: (document.getElementById('stPhone')?.value || '').trim(),
-          position: (document.getElementById('stPosition')?.value || '').trim(),
-          pin: (document.getElementById('stPin')?.value || '').trim(),
-          permissions: {
-            home: !!document.getElementById('permHome')?.checked,
-            editor: !!document.getElementById('permEditor')?.checked,
-            docs: !!document.getElementById('permDocs')?.checked,
-            techs: !!document.getElementById('permTechs')?.checked,
-            reports: !!document.getElementById('permReports')?.checked,
-            deleteDoc: !!document.getElementById('permDelete')?.checked
-          }
-        };
-
-        if (editId) {
-          const idx = staffList.findIndex(s => s.id === editId);
-          if (idx >= 0) staffList[idx] = item;
-          else staffList.push(item);
-        } else {
-          staffList.push(item);
-        }
-
-        saveLocalData();
-        clearStaffForm();
-        renderStaffManager();
-        populateLoginAccountOptions();
-        showToast('💾 ບັນທຶກຂໍ້ມູນພະນັກງານແລ້ວ');
-      }
-
-      function editStaffProfile(staffId) {
-        const st = staffList.find(s => s.id === staffId);
-        if (!st) return;
-        document.getElementById('staffEditId').value = st.id;
-        document.getElementById('stName').value = st.name || '';
-        document.getElementById('stPhone').value = st.phone || '';
-        document.getElementById('stPosition').value = st.position || '';
-        document.getElementById('stPin').value = st.pin || '';
-        const p = st.permissions || DEFAULT_STAFF_PERMS;
-        document.getElementById('permHome').checked = p.home !== false;
-        document.getElementById('permEditor').checked = p.editor !== false;
-        document.getElementById('permDocs').checked = p.docs !== false;
-        document.getElementById('permTechs').checked = p.techs !== false;
-        document.getElementById('permReports').checked = p.reports !== false;
-        document.getElementById('permDelete').checked = !!p.deleteDoc;
-      }
-
-      function deleteStaffProfile(staffId) {
-        staffList = staffList.filter(s => s.id !== staffId);
-        saveLocalData();
-        renderStaffManager();
-        populateLoginAccountOptions();
-        showToast('🗑️ ລຶບຂໍ້ມູນພະນັກງານແລ້ວ');
-      }
-
-      function renderStaffManager() {
-        const listEl = document.getElementById('staffManagerList');
-        if (!listEl) return;
-        if (!staffList.length) {
-          listEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px;">ຍັງບໍ່ມີບັນຊີພະນັກງານເພີ່ມເຕີມ</div>';
-          return;
-        }
-        listEl.innerHTML = staffList.map(st => `
-          <div class="doc-item" style="margin-bottom:8px;">
-            <div class="doc-top">
-              <div>
-                <div class="doc-id">👤 ${escapeHtml(st.name)}</div>
-                <div style="font-size:11.5px;color:var(--muted);" class="en-num">
-                  ${st.position ? escapeHtml(st.position) + ' • ' : ''}
-                  ${st.phone ? '📞 ' + escapeHtml(st.phone) + ' • ' : ''}
-                  ${st.pin ? 'PIN: ' + escapeHtml(st.pin) : 'ບໍ່ມີ PIN'}
-                </div>
-              </div>
-              <div class="doc-actions">
-                <button type="button" class="btn btn-outline btn-sm" data-edit-staff="${escapeHtml(st.id)}">✏️</button>
-                <button type="button" class="btn btn-danger btn-sm" data-del-staff="${escapeHtml(st.id)}">🗑️</button>
-              </div>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      function getGasUrl() {
-        try {
-          return (localStorage.getItem(STORAGE_KEYS.GAS_URL) || DEFAULT_GSHEET_WEBAPP_URL || '').trim();
-        } catch (e) {
-          return DEFAULT_GSHEET_WEBAPP_URL;
-        }
-      }
-
-      function setGasUrl(url) {
-        try {
-          localStorage.setItem(STORAGE_KEYS.GAS_URL, String(url || '').trim());
-        } catch (e) {}
-      }
-
-      function checkUrlParamGas() {
-        try {
-          const params = new URLSearchParams(window.location.search || '');
-          const gasParam = (params.get('gas') || '').trim();
-          if (gasParam) {
-            setGasUrl(gasParam);
-            const inp = document.getElementById('gasUrlInput');
-            if (inp) inp.value = gasParam;
-          }
-        } catch (e) {}
+        return false;
       }
 
       function normalizeIncomingDoc(raw) {
         if (!raw || typeof raw !== 'object') return null;
-        const cust = raw.customer && typeof raw.customer === 'object' ? raw.customer : {};
-        const rep = raw.repair && typeof raw.repair === 'object' ? raw.repair : {};
-        const rawItems = Array.isArray(raw.items) ? raw.items : [];
-        const items = rawItems.map(it => ({
-          name: String(it.name || it.title || '').trim(),
-          qty: parseNum(it.qty) || 1,
-          price: parseNum(it.price)
-        }));
+        const items = Array.isArray(raw.items) && raw.items.length
+          ? raw.items.map(it => ({
+              name: it.name || 'ລາຍການ',
+              qty: parseNum(it.qty) || 1,
+              price: parseNum(it.price)
+            }))
+          : [{ name: 'ລາຍການ', qty: 1, price: parseNum(raw.total) }];
 
-        const docType = (raw.docType === 'repair' || String(raw.type || '').includes('ສ້ອມ')) ? 'repair' : 'receipt';
-        const d = {
+        const normDate = normalizeAnyDateToIso(raw.docDate || raw.date || '') || new Date().toISOString().slice(0, 10);
+
+        return {
           id: String(raw.id || ('doc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6))),
-          docNo: String(raw.docNo || raw.id || '').trim(),
-          docType,
-          docDate: String(raw.docDate || raw.date || new Date().toISOString().slice(0, 10)).trim(),
-          currency: String(raw.currency || '₭').trim() || '₭',
-          depositCurrency: String(raw.depositCurrency || raw.currency || '₭').trim() || '₭',
+          docNo: String(raw.docNo || raw.id || 'REC-0001'),
+          docType: raw.docType === 'repair' ? 'repair' : 'receipt',
+          docDate: normDate,
+          currency: raw.currency || '₭',
+          depositCurrency: raw.depositCurrency || raw.currency || '₭',
           exchangeRate: parseNum(raw.exchangeRate),
-          docStatus: String(raw.docStatus || raw.status || 'ກຳລັງສ້ອມ').trim(),
-          custName: String(raw.custName || cust.name || 'ລູກຄ້າທົ່ວໄປ').trim(),
-          custPhone: String(raw.custPhone || cust.phone || '').trim(),
-          custAddr: String(raw.custAddr || cust.address || '').trim(),
-          custSocial: String(raw.custSocial || cust.messenger || '').trim(),
-          deviceModel: String(raw.deviceModel || rep.device || rep.techModel || '').trim(),
-          serialNo: String(raw.serialNo || rep.sn || '').trim(),
-          symptom: String(raw.symptom || rep.symptom || rep.techSymptom || '').trim(),
-          techName: String(raw.techName || rep.technician || '').trim(),
-          techStatus: String(raw.techStatus || rep.techStatus || raw.docStatus || '').trim(),
+          custName: String(raw.custName || 'ລູກຄ້າທົ່ວໄປ'),
+          custPhone: String(raw.custPhone || ''),
+          custAddr: String(raw.custAddr || ''),
+          custSocial: String(raw.custSocial || ''),
+          deviceModel: String(raw.deviceModel || ''),
+          serialNo: String(raw.serialNo || ''),
+          symptom: String(raw.symptom || ''),
+          techName: String(raw.techName || ''),
+          techWork: String(raw.techWork || ''),
+          techStatus: String(raw.techStatus || raw.docStatus || 'ກຳລັງສ້ອມ'),
           items,
+          total: parseNum(raw.total),
           deposit: parseNum(raw.deposit),
-          updatedAt: parseNum(raw.updatedAt) || Date.now()
+          balance: parseNum(raw.balance),
+          docStatus: String(raw.docStatus || 'ກຳລັງສ້ອມ'),
+          updatedAt: Number(raw.updatedAt) || Date.now()
         };
-        const t = computeDocTotals(d);
-        d.total = t.total;
-        d.balance = t.balance;
-        return d;
       }
 
-      function fetchGasViaJsonp(url) {
-        return new Promise((resolve, reject) => {
-          const cbName = '__lyFixmanGasCb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-          const script = document.createElement('script');
-          const timer = setTimeout(() => {
-            cleanup();
-            reject(new Error('JSONP timeout'));
-          }, 12000);
+      function renderShopBranding() {
+        const name = shopInfo.name || 'LY FIXMAN';
+        const tagline = shopInfo.tagline || '';
+        const addr = shopInfo.address || '';
+        const contactParts = [];
+        if (shopInfo.phone) contactParts.push(`📞 ${shopInfo.phone}`);
+        if (shopInfo.social) contactParts.push(`🌐 ${shopInfo.social}`);
+        const contactText = contactParts.join('  •  ');
 
-          function cleanup() {
-            clearTimeout(timer);
-            delete window[cbName];
-            if (script.parentNode) script.parentNode.removeChild(script);
+        const topName = document.getElementById('topBrandName');
+        const repName = document.getElementById('repShopName');
+        const loginShopName = document.getElementById('loginShopName');
+        const billShopName = document.getElementById('billPrintShopName');
+        const billShopTag = document.getElementById('billPrintShopTagline');
+        const billShopAddr = document.getElementById('billPrintShopAddr');
+        const billShopContact = document.getElementById('billPrintShopContact');
+        const billFooter = document.getElementById('billPrintFooterNote');
+        const repDetail = document.getElementById('repShopDetail');
+
+        if (topName) topName.textContent = name;
+        if (repName) repName.textContent = name;
+        if (loginShopName) loginShopName.textContent = name;
+        if (billShopName) billShopName.textContent = name;
+        if (billShopTag) billShopTag.textContent = tagline;
+        if (billShopAddr) billShopAddr.textContent = addr;
+        if (billShopContact) billShopContact.textContent = contactText;
+        if (billFooter) {
+          billFooter.textContent = `✨ ${tagline || 'ວ່ອງໄວ ໝັ້ນໃຈ ບໍລິການດີ'} • ຂອບໃຈທີ່ໃຊ້ບໍລິການ ${name} ✨`;
+        }
+        if (repDetail) {
+          repDetail.textContent = [tagline, addr, contactText].filter(Boolean).join(' • ') || 'ລະບົບຈັດການຮ້ານສ້ອມແປງ';
+        }
+
+        const logoHtml = shopInfo.logoDataUrl
+          ? `<img src="${escapeHtml(shopInfo.logoDataUrl)}" alt="Logo" />`
+          : escapeHtml((shopInfo.logoText || 'LY').slice(0, 4));
+
+        const topLogo = document.getElementById('topBrandLogo');
+        const billLogo = document.getElementById('billPrintLogoBox');
+        if (topLogo) topLogo.innerHTML = logoHtml;
+        if (billLogo) billLogo.innerHTML = logoHtml;
+
+        const logoPrevWrap = document.getElementById('setShopLogoPreviewWrap');
+        const logoPrevImg = document.getElementById('setShopLogoPreviewImg');
+        if (logoPrevWrap && logoPrevImg) {
+          if (shopInfo.logoDataUrl) {
+            logoPrevWrap.style.display = 'flex';
+            logoPrevImg.src = shopInfo.logoDataUrl;
+          } else {
+            logoPrevWrap.style.display = 'none';
+            logoPrevImg.src = '';
           }
+        }
 
-          window[cbName] = function (data) {
-            cleanup();
-            resolve(data);
-          };
-
-          const sep = url.includes('?') ? '&' : '?';
-          script.src = `${url}${sep}action=get&callback=${encodeURIComponent(cbName)}&_t=${Date.now()}`;
-          script.onerror = function () {
-            cleanup();
-            reject(new Error('Script load error'));
-          };
-          document.body.appendChild(script);
-        });
+        const qrPrevWrap = document.getElementById('setShopQrPreviewWrap');
+        const qrPrevImg = document.getElementById('setShopQrPreviewImg');
+        const qrPrevCap = document.getElementById('setShopQrPreviewCaption');
+        if (qrPrevWrap && qrPrevImg) {
+          if (shopInfo.qrDataUrl) {
+            qrPrevWrap.style.display = 'block';
+            qrPrevImg.src = shopInfo.qrDataUrl;
+            if (qrPrevCap) qrPrevCap.textContent = shopInfo.qrLabel || '';
+          } else {
+            qrPrevWrap.style.display = 'none';
+            qrPrevImg.src = '';
+            if (qrPrevCap) qrPrevCap.textContent = '';
+          }
+        }
       }
 
-      async function syncPullFromGas(silent = false) {
-        const url = getGasUrl();
-        if (!url) {
-          if (!silent) showToast('ກະລຸນາໃສ່ລິ້ງ Google Apps Script ກ່ອນ');
+      function populateShopSettingsForm() {
+        const setVal = (id, v) => {
+          const el = document.getElementById(id);
+          if (el) el.value = v || '';
+        };
+        setVal('setShopName', shopInfo.name);
+        setVal('setShopTagline', shopInfo.tagline);
+        setVal('setShopPhone', shopInfo.phone);
+        setVal('setShopSocial', shopInfo.social);
+        setVal('setShopAddress', shopInfo.address);
+        setVal('setShopLogoText', shopInfo.logoText || 'LY');
+        setVal('setShopQrLabel', shopInfo.qrLabel);
+        renderShopBranding();
+      }
+
+      function saveShopSettings() {
+        if (!isOwner()) {
+          showToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນທີ່ປ່ຽນຂໍ້ມູນຮ້ານໄດ້');
           return;
         }
-        setSyncStatus('syncing', 'ກຳລັງດຶງ...');
-        try {
-          let payload = null;
-          try {
-            const sep = url.includes('?') ? '&' : '?';
-            const res = await fetch(`${url}${sep}action=get&_t=${Date.now()}`, { method: 'GET' });
-            payload = await res.json();
-          } catch (fetchErr) {
-            payload = await fetchGasViaJsonp(url);
-          }
-
-          const arr = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.data) ? payload.data : []);
-          const normalized = arr.map(normalizeIncomingDoc).filter(Boolean);
-          if (normalized.length) {
-            const map = new Map();
-            docs.forEach(d => map.set(d.id, d));
-            normalized.forEach(d => map.set(d.id, d));
-            docs = Array.from(map.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-          }
-
-          if (payload && payload.shop && typeof payload.shop === 'object') {
-            shopInfo = { ...DEFAULT_SHOP, ...shopInfo, ...payload.shop };
-            applyShopBranding();
-          }
-
-          saveLocalData();
-          renderAll();
-          setSyncStatus('synced', 'ຊິ້ງສຳເລັດ');
-          if (!silent) showToast(`⬇️ ດຶງຂໍ້ມູນສຳເລັດ (${normalized.length} ລາຍການ)`);
-        } catch (err) {
-          setSyncStatus('error', 'ຊິ້ງບໍ່ສຳເລັດ');
-          if (!silent) showToast('❌ ດຶງຂໍ້ມູນຈາກ Cloud ບໍ່ສຳເລັດ');
-        }
-      }
-
-      async function syncPushToGas(silent = false) {
-        const url = getGasUrl();
-        if (!url) {
-          if (!silent) showToast('ກະລຸນາໃສ່ລິ້ງ Google Apps Script ກ່ອນ');
-          return;
-        }
-        setSyncStatus('syncing', 'ກຳລັງສົ່ງ...');
-        try {
-          for (const d of docs.slice(0, 30)) {
-            await fetch(url, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: 'saveDoc', doc: d })
-            });
-          }
-          setSyncStatus('synced', 'ສົ່ງແລ້ວ');
-          if (!silent) showToast('⬆️ ສົ່ງຂໍ້ມູນໄປ Cloud ສຳເລັດ!');
-        } catch (err) {
-          setSyncStatus('error', 'ສົ່ງບໍ່ສຳເລັດ');
-          if (!silent) showToast('❌ ສົ່ງຂໍ້ມູນໄປ Cloud ບໍ່ສຳເລັດ');
-        }
-      }
-
-      function copyTextToClipboard(text, successMsg) {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand('copy');
-          showToast(successMsg || '📋 ຄັດລອກສຳເລັດ!');
-        } catch (e) {
-          showToast('ບໍ່ສາມາດຄັດລອກອັດຕະໂນມັດໄດ້');
-        }
-        document.body.removeChild(ta);
-      }
-
-      function switchView(viewName) {
-        if (viewName === 'new') {
-          openNewEditor('receipt');
-          return;
-        }
-        const targetId = viewName.startsWith('view-') ? viewName : ('view-' + viewName);
-        const cleanName = targetId.replace(/^view-/, '');
-
-        if (!canAccessView(cleanName)) {
-          showToast('🚫 ບັນຊີຂອງທ່ານບໍ່ມີສິດເຂົ້າເຖິງສ່ວນນີ້');
-          return;
-        }
-
-        document.querySelectorAll('.view-section').forEach(sec => {
-          sec.classList.toggle('active', sec.id === targetId);
-        });
-
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.nav === cleanName);
-        });
-
-        if (cleanName === 'home') renderHome();
-        else if (cleanName === 'docs') renderAllDocs();
-        else if (cleanName === 'techs') renderTechManager();
-        else if (cleanName === 'reports') renderReports();
-        else if (cleanName === 'printbill') {
-          populatePrintDocSelect();
-          renderPrintBillPreview();
-        } else if (cleanName === 'settings') {
-          loadShopSettingsForm();
-          renderStaffManager();
-          const gasInput = document.getElementById('gasUrlInput');
-          if (gasInput) gasInput.value = getGasUrl();
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-
-      function renderAll() {
-        applyShopBranding();
-        renderHome();
-        renderAllDocs();
-        renderTechManager();
-        renderStaffManager();
-        populateReportTechSelect();
+        shopInfo = {
+          ...shopInfo,
+          name: (document.getElementById('setShopName')?.value || '').trim() || 'LY FIXMAN',
+          tagline: (document.getElementById('setShopTagline')?.value || '').trim(),
+          phone: (document.getElementById('setShopPhone')?.value || '').trim(),
+          social: (document.getElementById('setShopSocial')?.value || '').trim(),
+          address: (document.getElementById('setShopAddress')?.value || '').trim(),
+          logoText: ((document.getElementById('setShopLogoText')?.value || '').trim() || 'LY').slice(0, 4),
+          qrLabel: (document.getElementById('setShopQrLabel')?.value || '').trim()
+        };
+        saveLocalData();
+        renderShopBranding();
         renderReports();
-        populatePrintDocSelect();
         renderPrintBillPreview();
+        showToast('ບັນທຶກຂໍ້ມູນຮ້ານສຳເລັດ!');
+        if (getGasUrl()) {
+          syncPushShopToGas(shopInfo);
+        }
       }
 
-      function handleImageFileUpload(file, maxSize, callback) {
-        if (!file) return;
+      function readImageFileToDataUrl(file, maxSize, callback) {
+        if (!file || !file.type.startsWith('image/')) {
+          showToast('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ');
+          return;
+        }
         const reader = new FileReader();
         reader.onload = function (ev) {
           const img = new Image();
@@ -3519,34 +2300,1342 @@ function doPost(e) {
             canvas.height = h;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, w, h);
-            callback(canvas.toDataURL('image/png'));
+            callback(canvas.toDataURL('image/png', 0.9));
           };
           img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
       }
 
+      function clearStaffForm() {
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        const setChk = (id, c) => { const el = document.getElementById(id); if (el) el.checked = c; };
+        setVal('staffEditId', '');
+        setVal('stName', '');
+        setVal('stPhone', '');
+        setVal('stPosition', '');
+        setVal('stPin', '');
+        setChk('permHome', true);
+        setChk('permEditor', true);
+        setChk('permDocs', true);
+        setChk('permTechs', true);
+        setChk('permReports', true);
+        setChk('permDelete', false);
+      }
+
+      function saveStaffProfile() {
+        if (!isOwner()) {
+          showToast('ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນ');
+          return;
+        }
+        const name = (document.getElementById('stName')?.value || '').trim();
+        if (!name) {
+          showToast('ກະລຸນາປ້ອນຊື່ພະນັກງານ');
+          return;
+        }
+        const editId = (document.getElementById('staffEditId')?.value || '').trim();
+        const staffObj = {
+          id: editId || ('st_' + Date.now()),
+          name,
+          phone: (document.getElementById('stPhone')?.value || '').trim(),
+          position: (document.getElementById('stPosition')?.value || '').trim(),
+          pin: (document.getElementById('stPin')?.value || '').trim(),
+          permissions: {
+            home: !!document.getElementById('permHome')?.checked,
+            editor: !!document.getElementById('permEditor')?.checked,
+            docs: !!document.getElementById('permDocs')?.checked,
+            techs: !!document.getElementById('permTechs')?.checked,
+            reports: !!document.getElementById('permReports')?.checked,
+            deleteDoc: !!document.getElementById('permDelete')?.checked
+          },
+          updatedAt: Date.now()
+        };
+
+        const idx = staffList.findIndex(s => String(s.id) === String(staffObj.id));
+        if (idx >= 0) staffList[idx] = staffObj;
+        else staffList.push(staffObj);
+
+        saveLocalData();
+        populateLoginAccountOptions();
+        renderStaffList();
+        clearStaffForm();
+        showToast('ບັນທຶກຂໍ້ມູນພະນັກງານສຳເລັດ!');
+        if (getGasUrl()) {
+          syncPushStaffToGas(staffObj);
+        }
+      }
+
+      function editStaffProfile(id) {
+        const st = staffList.find(s => String(s.id) === String(id));
+        if (!st) return;
+        const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+        const setChk = (elId, c) => { const el = document.getElementById(elId); if (el) el.checked = !!c; };
+        setVal('staffEditId', st.id);
+        setVal('stName', st.name);
+        setVal('stPhone', st.phone);
+        setVal('stPosition', st.position);
+        setVal('stPin', st.pin);
+        const p = st.permissions || DEFAULT_STAFF_PERMS;
+        setChk('permHome', p.home !== false);
+        setChk('permEditor', p.editor !== false);
+        setChk('permDocs', p.docs !== false);
+        setChk('permTechs', p.techs !== false);
+        setChk('permReports', p.reports !== false);
+        setChk('permDelete', !!p.deleteDoc);
+      }
+
+      function deleteStaffProfile(id) {
+        if (!isOwner()) return;
+        staffList = staffList.filter(s => String(s.id) !== String(id));
+        saveLocalData();
+        populateLoginAccountOptions();
+        renderStaffList();
+        showToast('ລຶບຂໍ້ມູນພະນັກງານແລ້ວ');
+      }
+
+      function renderStaffList() {
+        const box = document.getElementById('staffManagerList');
+        if (!box) return;
+        if (!staffList.length) {
+          box.innerHTML = '<div class="empty-state" style="padding:12px;">ຍັງບໍ່ມີບັນຊີພະນັກງານເພີ່ມ</div>';
+          return;
+        }
+        box.innerHTML = staffList.map(st => {
+          const p = st.permissions || DEFAULT_STAFF_PERMS;
+          const tags = [
+            p.home !== false ? 'ໜ້າຫຼັກ' : '',
+            p.editor !== false ? 'ສ້າງບິນ' : '',
+            p.docs !== false ? 'ເອກະສານ' : '',
+            p.techs !== false ? 'ຊ່າງ' : '',
+            p.reports !== false ? 'ລາຍງານ' : '',
+            p.deleteDoc ? 'ລຶບບິນ' : ''
+          ].filter(Boolean).join(', ');
+          return `
+            <div class="doc-item" style="margin-bottom:8px;">
+              <div class="doc-top">
+                <div>
+                  <div class="doc-id">👤 ${escapeHtml(st.name)}</div>
+                  <div class="doc-meta" style="margin-bottom:4px;">${escapeHtml(st.position || 'ພະນັກງານ')}${st.phone ? ' • ' + escapeHtml(st.phone) : ''}${st.pin ? ' • PIN: ' + escapeHtml(st.pin) : ''}</div>
+                  <div style="font-size:11px;color:var(--primary);">ສິດ: ${escapeHtml(tags || 'ບໍ່ມີ')}</div>
+                </div>
+                <div class="doc-actions">
+                  <button type="button" class="btn btn-outline btn-sm" data-editstaff="${escapeHtml(st.id)}">ແກ້ໄຂ</button>
+                  <button type="button" class="btn btn-danger btn-sm" data-delstaff="${escapeHtml(st.id)}">ລຶບ</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function populateReceiptTechDropdown(selectedName = '') {
+        const sel = document.getElementById('fReceiptTechName');
+        if (!sel) return;
+        let html = '<option value="">-- ເລືອກຊ່າງຮັບຜິດຊອບ --</option>';
+        const namesSet = new Set();
+        technicians.forEach(t => {
+          if (t && t.name) namesSet.add(String(t.name).trim());
+        });
+        if (selectedName && String(selectedName).trim()) {
+          namesSet.add(String(selectedName).trim());
+        }
+        namesSet.forEach(nm => {
+          html += `<option value="${escapeHtml(nm)}">${escapeHtml(nm)}</option>`;
+        });
+        sel.innerHTML = html;
+        sel.value = selectedName || '';
+      }
+
+      function renderTechChipsInModal() {
+        const chipsBox = document.getElementById('techQuickChips');
+        if (!chipsBox) return;
+        if (!technicians.length) {
+          chipsBox.innerHTML = '';
+          return;
+        }
+        chipsBox.innerHTML = technicians.map(t =>
+          `<button type="button" class="chip" data-picktech="${escapeHtml(t.name)}">👷 ${escapeHtml(t.name)}</button>`
+        ).join('');
+      }
+
+      function clearTechProfileForm() {
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        setVal('tmEditId', '');
+        setVal('tmName', '');
+        setVal('tmPhone', '');
+        setVal('tmAddress', '');
+        setVal('tmJoinDate', '');
+        setVal('tmSpecialty', '');
+        setVal('tmEducation', '');
+        setVal('tmExperience', '');
+        const titleEl = document.getElementById('techFormTitle');
+        if (titleEl) titleEl.textContent = '👷 ຈັດການຂໍ້ມູນຊ່າງສ້ອມ';
+      }
+
+      function saveTechProfile() {
+        const name = (document.getElementById('tmName')?.value || '').trim();
+        if (!name) {
+          showToast('ກະລຸນາປ້ອນຊື່ຊ່າງສ້ອມ');
+          return;
+        }
+        const editId = (document.getElementById('tmEditId')?.value || '').trim();
+        const techObj = {
+          id: editId || ('tech_' + Date.now()),
+          name,
+          phone: (document.getElementById('tmPhone')?.value || '').trim(),
+          address: (document.getElementById('tmAddress')?.value || '').trim(),
+          joinDate: (document.getElementById('tmJoinDate')?.value || '').trim(),
+          specialty: (document.getElementById('tmSpecialty')?.value || '').trim(),
+          education: (document.getElementById('tmEducation')?.value || '').trim(),
+          experience: (document.getElementById('tmExperience')?.value || '').trim(),
+          updatedAt: Date.now()
+        };
+
+        const idx = technicians.findIndex(t => String(t.id) === String(techObj.id));
+        if (idx >= 0) technicians[idx] = techObj;
+        else technicians.push(techObj);
+
+        saveLocalData();
+        renderTechManagerList();
+        populateReceiptTechDropdown(document.getElementById('fReceiptTechName')?.value || '');
+        clearTechProfileForm();
+        showToast('ບັນທຶກຂໍ້ມູນຊ່າງສຳເລັດ!');
+        if (getGasUrl()) {
+          syncPushTechToGas(techObj);
+        }
+      }
+
+      function editTechProfile(id) {
+        const t = technicians.find(item => String(item.id) === String(id));
+        if (!t) return;
+        const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+        setVal('tmEditId', t.id);
+        setVal('tmName', t.name);
+        setVal('tmPhone', t.phone);
+        setVal('tmAddress', t.address);
+        setVal('tmJoinDate', t.joinDate);
+        setVal('tmSpecialty', t.specialty);
+        setVal('tmEducation', t.education);
+        setVal('tmExperience', t.experience);
+        const titleEl = document.getElementById('techFormTitle');
+        if (titleEl) titleEl.textContent = '✏️ ແກ້ໄຂຂໍ້ມູນຊ່າງສ້ອມ';
+      }
+
+      function deleteTechProfile(id) {
+        technicians = technicians.filter(item => String(item.id) !== String(id));
+        saveLocalData();
+        renderTechManagerList();
+        populateReceiptTechDropdown(document.getElementById('fReceiptTechName')?.value || '');
+        showToast('ລຶບຂໍ້ມູນຊ່າງແລ້ວ');
+      }
+
+      function renderTechManagerList() {
+        const listEl = document.getElementById('techManagerList');
+        const countEl = document.getElementById('techListCount');
+        if (countEl) countEl.textContent = `${technicians.length} ຄົນ`;
+        if (!listEl) return;
+
+        if (!technicians.length) {
+          listEl.innerHTML = '<div class="empty-state">ຍັງບໍ່ມີຂໍ້ມູນຊ່າງສ້ອມ</div>';
+          return;
+        }
+
+        listEl.innerHTML = technicians.map(t => {
+          const details = [
+            t.phone ? `📞 ${escapeHtml(t.phone)}` : '',
+            t.specialty ? `🛠️ ${escapeHtml(t.specialty)}` : '',
+            t.education ? `🎓 ${escapeHtml(t.education)}` : '',
+            t.experience ? `⭐ ${escapeHtml(t.experience)}` : '',
+            t.joinDate ? `📅 ເຂົ້າວຽກ: ${escapeHtml(t.joinDate)}` : '',
+            t.address ? `📍 ${escapeHtml(t.address)}` : ''
+          ].filter(Boolean).join(' • ');
+
+          return `
+            <div class="doc-item">
+              <div class="doc-top">
+                <div>
+                  <div class="doc-id">👷 ${escapeHtml(t.name)}</div>
+                  <div class="doc-meta" style="margin-bottom:0;margin-top:4px;">${details || 'ບໍ່ມີລາຍລະອຽດເພີ່ມເຕີມ'}</div>
+                </div>
+                <div class="doc-actions">
+                  <button type="button" class="btn btn-outline btn-sm" data-edittech="${escapeHtml(t.id)}">ແກ້ໄຂ</button>
+                  <button type="button" class="btn btn-danger btn-sm" data-deltech="${escapeHtml(t.id)}">ລຶບ</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function generateNextDocNo(type) {
+        const prefix = type === 'repair' ? 'REP-' : 'REC-';
+        let maxNum = 0;
+        docs.forEach(d => {
+          const no = String(d.docNo || '');
+          if (no.startsWith(prefix)) {
+            const numPart = parseInt(no.replace(prefix, ''), 10);
+            if (!isNaN(numPart) && numPart > maxNum) maxNum = numPart;
+          }
+        });
+        return `${prefix}${String(maxNum + 1).padStart(4, '0')}`;
+      }
+
+      function setEditorDocType(type) {
+        currentDocType = type === 'repair' ? 'repair' : 'receipt';
+        const btnRec = document.getElementById('btnTypeReceipt');
+        const btnRep = document.getElementById('btnTypeRepair');
+        const techBanner = document.getElementById('techBannerBox');
+        const devFields = document.getElementById('repairDeviceFields');
+        const badge = document.getElementById('editorDocBadge');
+        const docNoInp = document.getElementById('fDocNo');
+
+        if (btnRec) btnRec.classList.toggle('active', currentDocType === 'receipt');
+        if (btnRep) btnRep.classList.toggle('active', currentDocType === 'repair');
+        if (techBanner) techBanner.style.display = currentDocType === 'repair' ? 'flex' : 'none';
+        if (devFields) devFields.style.display = currentDocType === 'repair' ? 'block' : 'none';
+
+        if (!editingId && docNoInp) {
+          const curNo = docNoInp.value.trim();
+          if (!curNo || curNo.startsWith('REC-') || curNo.startsWith('REP-')) {
+            docNoInp.value = generateNextDocNo(currentDocType);
+          }
+        }
+        if (badge && docNoInp) {
+          badge.textContent = docNoInp.value.trim() || generateNextDocNo(currentDocType);
+          badge.className = `doc-type-badge en-num ${currentDocType === 'repair' ? 'badge-repair' : 'badge-receipt'}`;
+        }
+      }
+
+      function renderItemsEditor() {
+        const box = document.getElementById('itemsContainer');
+        if (!box) return;
+        if (!draftItems.length) {
+          draftItems = [{ name: '', qty: 1, price: 0 }];
+        }
+        box.innerHTML = draftItems.map((it, idx) => `
+          <div class="item-row-card">
+            <div class="item-row-top">
+              <span>ລາຍການທີ ${idx + 1}</span>
+              ${draftItems.length > 1 ? `<button type="button" class="btn btn-danger btn-sm" data-delitem="${idx}">ລຶບ</button>` : ''}
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+              <input type="text" placeholder="ຊື່ສິນຄ້າ ຫຼື ລາຍການສ້ອມ" value="${escapeHtml(it.name)}" data-itemname="${idx}" />
+            </div>
+            <div class="form-row" style="margin-bottom:0;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label>ຈຳນວນ</label>
+                <input type="text" inputmode="decimal" class="en-num" value="${escapeHtml(String(it.qty ?? 1))}" data-itemqty="${idx}" />
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>ລາຄາ</label>
+                <input type="text" inputmode="decimal" class="en-num" value="${escapeHtml(String(it.price ?? 0))}" data-itemprice="${idx}" />
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function updateTechBannerText() {
+        const el = document.getElementById('techBannerSummary');
+        if (!el) return;
+        const parts = [];
+        if (draftTech.techName) parts.push(`ຊ່າງ: ${draftTech.techName}`);
+        if (draftTech.deviceModel) parts.push(`ລຸ້ນ: ${draftTech.deviceModel}`);
+        if (draftTech.techStatus) parts.push(`ສະຖານະ: ${draftTech.techStatus}`);
+        el.textContent = parts.length ? parts.join(' • ') : 'ຍັງບໍ່ໄດ້ບັນທຶກຂໍ້ມູນຊ່າງ';
+      }
+
+      function recalcTotals() {
+        const curr = document.getElementById('fCurrency')?.value || '₭';
+        const depCurr = document.getElementById('fDepositCurrency')?.value || curr;
+        const rate = parseNum(document.getElementById('fExchangeRate')?.value);
+
+        const exWrap = document.getElementById('exchangeRateWrap');
+        const exInfo = document.getElementById('exchangeRateInfoLine');
+        if (exWrap) {
+          exWrap.style.display = (curr !== '₭' || depCurr !== '₭') ? 'block' : 'none';
+        }
+
+        const total = draftItems.reduce((sum, it) => sum + parseNum(it.qty) * parseNum(it.price), 0);
+        const depositRaw = parseNum(document.getElementById('fDeposit')?.value);
+
+        let depositInMainCurr = depositRaw;
+        if (depCurr !== curr) {
+          const depKip = toKipAmount(depositRaw, depCurr, rate);
+          if (curr === '₭') {
+            depositInMainCurr = depKip;
+          } else if (rate > 0) {
+            depositInMainCurr = depKip / rate;
+          }
+        }
+
+        const balance = total - depositInMainCurr;
+
+        const totalEl = document.getElementById('fTotal');
+        const balEl = document.getElementById('fBalance');
+        const noteEl = document.getElementById('balanceStatusNote');
+        const kipBox = document.getElementById('docKipSummaryBox');
+
+        if (totalEl) totalEl.textContent = formatMoney(total, curr);
+        if (balEl) {
+          balEl.textContent = formatMoney(balance, curr);
+          balEl.style.color = balance > 0 ? 'var(--danger)' : 'var(--primary)';
+        }
+        if (noteEl) {
+          if (balance === 0) noteEl.textContent = 'ຈ່າຍຄົບແລ້ວ';
+          else if (balance > 0) noteEl.textContent = `ຍັງຄ້າງຊຳລະ ${formatMoney(balance, curr)}`;
+          else noteEl.textContent = `ລູກຄ້າຈ່າຍເກີນ ${formatMoney(Math.abs(balance), curr)}`;
+        }
+
+        if (exInfo) {
+          if (curr !== '₭') {
+            const totKip = toKipAmount(total, curr, rate);
+            exInfo.style.display = 'block';
+            exInfo.textContent = rate > 0
+              ? `ທຽບເທົ່າກີບ: ລວມ ${formatMoney(totKip, '₭')} (ອັດຕາ 1 ${curr} = ${rate.toLocaleString('en-US')} ₭)`
+              : `ກະລຸນາໃສ່ອັດຕາແລກປ່ຽນ (1 ${curr} = ? ₭)`;
+          } else {
+            exInfo.style.display = 'none';
+          }
+        }
+
+        if (kipBox) {
+          if (curr !== '₭' || depCurr !== '₭') {
+            const totKip = toKipAmount(total, curr, rate);
+            const depKip = toKipAmount(depositRaw, depCurr, rate);
+            const balKip = totKip - depKip;
+            kipBox.textContent = `ສະຫຼຸບເງິນກີບ: ລວມ ${formatMoney(totKip, '₭')} | ມັດຈຳ ${formatMoney(depKip, '₭')} | ຄ້າງ ${formatMoney(balKip, '₭')}`;
+          } else {
+            kipBox.textContent = '';
+          }
+        }
+      }
+
+      function openNewEditor(type = 'receipt') {
+        if (!canAccess('editor')) {
+          showToast('ບໍ່ມີສິດສ້າງເອກະສານ');
+          return;
+        }
+        editingId = null;
+        const titleEl = document.getElementById('editorFormTitle');
+        if (titleEl) titleEl.textContent = 'ສ້າງເອກະສານໃໝ່';
+
+        const today = new Date().toISOString().slice(0, 10);
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        setVal('fDocNo', generateNextDocNo(type));
+        setVal('fDocDate', today);
+        setVal('fCurrency', '₭');
+        setVal('fDepositCurrency', '₭');
+        setVal('fExchangeRate', '0');
+        setVal('fDocStatus', type === 'repair' ? 'ກຳລັງສ້ອມ' : 'ຈ່າຍຄົບແລ້ວ');
+        setVal('fCustName', '');
+        setVal('fCustPhone', '');
+        setVal('fCustAddr', '');
+        setVal('fCustSocial', '');
+        setVal('fDeviceModel', '');
+        setVal('fSerialNo', '');
+        setVal('fSymptom', '');
+        setVal('fDeposit', '0');
+
+        populateReceiptTechDropdown('');
+        draftTech = {
+          deviceModel: '',
+          serialNo: '',
+          symptom: '',
+          techName: '',
+          techStatus: 'ກຳລັງສ້ອມ'
+        };
+        draftItems = [{ name: '', qty: 1, price: 0 }];
+
+        setEditorDocType(type);
+        updateTechBannerText();
+        renderItemsEditor();
+        recalcTotals();
+        switchView('editor');
+      }
+
+      function editDoc(id) {
+        if (!canAccess('editor')) {
+          showToast('ບໍ່ມີສິດແກ້ໄຂເອກະສານ');
+          return;
+        }
+        const doc = docs.find(d => String(d.id) === String(id));
+        if (!doc) return;
+
+        editingId = doc.id;
+        const titleEl = document.getElementById('editorFormTitle');
+        if (titleEl) titleEl.textContent = `ແກ້ໄຂເອກະສານ (${doc.docNo || doc.id})`;
+
+        const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v ?? ''; };
+        setVal('fDocNo', doc.docNo || '');
+        setVal('fDocDate', getDocIsoDate(doc) || new Date().toISOString().slice(0, 10));
+        setVal('fCurrency', doc.currency || '₭');
+        setVal('fDepositCurrency', doc.depositCurrency || doc.currency || '₭');
+        setVal('fExchangeRate', String(doc.exchangeRate || 0));
+        setVal('fDocStatus', doc.docStatus || 'ກຳລັງສ້ອມ');
+        setVal('fCustName', doc.custName || '');
+        setVal('fCustPhone', doc.custPhone || '');
+        setVal('fCustAddr', doc.custAddr || '');
+        setVal('fCustSocial', doc.custSocial || '');
+        setVal('fDeviceModel', doc.deviceModel || '');
+        setVal('fSerialNo', doc.serialNo || '');
+        setVal('fSymptom', doc.symptom || '');
+        setVal('fDeposit', String(doc.deposit ?? 0));
+
+        populateReceiptTechDropdown(doc.techName || '');
+        draftTech = {
+          deviceModel: doc.deviceModel || '',
+          serialNo: doc.serialNo || '',
+          symptom: doc.symptom || '',
+          techName: doc.techName || '',
+          techStatus: doc.techStatus || doc.docStatus || 'ກຳລັງສ້ອມ'
+        };
+        draftItems = Array.isArray(doc.items) && doc.items.length
+          ? doc.items.map(it => ({ name: it.name || '', qty: it.qty ?? 1, price: it.price ?? 0 }))
+          : [{ name: '', qty: 1, price: 0 }];
+
+        setEditorDocType(doc.docType || 'receipt');
+        updateTechBannerText();
+        renderItemsEditor();
+        recalcTotals();
+        switchView('editor');
+      }
+
+      function saveCurrentDocument() {
+        const docNo = (document.getElementById('fDocNo')?.value || '').trim() || generateNextDocNo(currentDocType);
+        const docDate = (document.getElementById('fDocDate')?.value || '').trim() || new Date().toISOString().slice(0, 10);
+        const currency = document.getElementById('fCurrency')?.value || '₭';
+        const depositCurrency = document.getElementById('fDepositCurrency')?.value || currency;
+        const exchangeRate = parseNum(document.getElementById('fExchangeRate')?.value);
+        const docStatus = document.getElementById('fDocStatus')?.value || 'ກຳລັງສ້ອມ';
+        const custName = (document.getElementById('fCustName')?.value || '').trim() || 'ລູກຄ້າທົ່ວໄປ';
+        const custPhone = (document.getElementById('fCustPhone')?.value || '').trim();
+        const custAddr = (document.getElementById('fCustAddr')?.value || '').trim();
+        const custSocial = (document.getElementById('fCustSocial')?.value || '').trim();
+
+        const devModelInput = (document.getElementById('fDeviceModel')?.value || '').trim();
+        const serialInput = (document.getElementById('fSerialNo')?.value || '').trim();
+        const symptomInput = (document.getElementById('fSymptom')?.value || '').trim();
+        const receiptTechSel = (document.getElementById('fReceiptTechName')?.value || '').trim();
+
+        const deviceModel = devModelInput || draftTech.deviceModel || '';
+        const serialNo = serialInput || draftTech.serialNo || '';
+        const symptom = symptomInput || draftTech.symptom || '';
+        const techName = currentDocType === 'repair'
+          ? (draftTech.techName || receiptTechSel || '')
+          : (receiptTechSel || draftTech.techName || '');
+
+        const cleanedItems = draftItems
+          .map(it => ({
+            name: String(it.name || '').trim() || 'ລາຍການ',
+            qty: parseNum(it.qty) || 1,
+            price: parseNum(it.price)
+          }))
+          .filter(it => it.name || it.price > 0);
+
+        const itemsToSave = cleanedItems.length ? cleanedItems : [{ name: 'ບໍລິການ', qty: 1, price: 0 }];
+        const total = itemsToSave.reduce((s, it) => s + it.qty * it.price, 0);
+        const deposit = parseNum(document.getElementById('fDeposit')?.value);
+
+        let depositInMain = deposit;
+        if (depositCurrency !== currency) {
+          const depKip = toKipAmount(deposit, depositCurrency, exchangeRate);
+          depositInMain = currency === '₭' ? depKip : (exchangeRate > 0 ? depKip / exchangeRate : 0);
+        }
+        const balance = total - depositInMain;
+
+        const docObj = {
+          id: editingId || ('doc_' + Date.now()),
+          docNo,
+          docType: currentDocType,
+          docDate,
+          currency,
+          depositCurrency,
+          exchangeRate,
+          custName,
+          custPhone,
+          custAddr,
+          custSocial,
+          deviceModel,
+          serialNo,
+          symptom,
+          techName,
+          techWork: draftTech.techWork || symptom,
+          techStatus: draftTech.techStatus || docStatus,
+          items: itemsToSave,
+          total,
+          deposit,
+          balance,
+          docStatus,
+          updatedAt: Date.now()
+        };
+
+        const idx = docs.findIndex(d => String(d.id) === String(docObj.id));
+        if (idx >= 0) docs[idx] = docObj;
+        else docs.unshift(docObj);
+
+        saveLocalData();
+        renderAll();
+        showToast('ບັນທຶກເອກະສານສຳເລັດ!');
+
+        if (getGasUrl()) {
+          syncPushDocToGas(docObj);
+        }
+
+        populatePrintDocSelect(docObj.id);
+        renderPrintBillPreview();
+        switchView('docs');
+      }
+
+      function deleteDoc(id) {
+        if (!isOwner() && !currentSession.permissions?.deleteDoc) {
+          showToast('ບໍ່ມີສິດລຶບເອກະສານ');
+          return;
+        }
+        docs = docs.filter(d => String(d.id) !== String(id));
+        saveLocalData();
+        renderAll();
+        showToast('ລຶບເອກະສານແລ້ວ');
+      }
+
+      function openPrintBillForDoc(id) {
+        populatePrintDocSelect(id);
+        renderPrintBillPreview();
+        switchView('printbill');
+      }
+
+      function populatePrintDocSelect(selectedId = '') {
+        const sel = document.getElementById('printDocSelect');
+        if (!sel) return;
+        if (!docs.length) {
+          sel.innerHTML = '<option value="">-- ຍັງບໍ່ມີເອກະສານ --</option>';
+          return;
+        }
+        sel.innerHTML = docs.map(d =>
+          `<option value="${escapeHtml(d.id)}">${escapeHtml(d.docNo || d.id)} • ${escapeHtml(d.custName || 'ລູກຄ້າ')} (${escapeHtml(d.docDate || '')})</option>`
+        ).join('');
+        if (selectedId && sel.querySelector(`option[value="${CSS.escape(String(selectedId))}"]`)) {
+          sel.value = String(selectedId);
+        } else if (!sel.value) {
+          sel.value = String(docs[0].id);
+        }
+      }
+
+      function renderPrintBillPreview() {
+        const sel = document.getElementById('printDocSelect');
+        const docId = sel ? sel.value : (docs[0]?.id || '');
+        const doc = docs.find(d => String(d.id) === String(docId)) || docs[0];
+
+        const noEl = document.getElementById('billPrintDocNo');
+        const dateEl = document.getElementById('billPrintDocDate');
+        const titleEl = document.getElementById('billPrintTitle');
+        const bodyEl = document.getElementById('billPrintBody');
+
+        renderShopBranding();
+
+        if (!doc) {
+          if (noEl) noEl.textContent = 'REC-0001';
+          if (dateEl) dateEl.textContent = 'ວັນທີ: -';
+          if (titleEl) titleEl.textContent = 'ໃບຮັບເງິນ';
+          if (bodyEl) bodyEl.innerHTML = '<div class="empty-state">ຍັງບໍ່ມີຂໍ້ມູນເອກະສານສຳລັບພິມບິນ</div>';
+          return;
+        }
+
+        const curr = doc.currency || '₭';
+        const depCurr = doc.depositCurrency || curr;
+        const rate = parseNum(doc.exchangeRate);
+        const { total, deposit } = computeDocTotals(doc);
+
+        let depositInMain = deposit;
+        if (depCurr !== curr) {
+          const depKip = toKipAmount(deposit, depCurr, rate);
+          depositInMain = curr === '₭' ? depKip : (rate > 0 ? depKip / rate : 0);
+        }
+        const balance = total - depositInMain;
+
+        if (noEl) noEl.textContent = doc.docNo || doc.id;
+        if (dateEl) dateEl.textContent = `ວັນທີ: ${doc.docDate || '-'}`;
+        if (titleEl) titleEl.textContent = doc.docType === 'repair' ? 'ໃບຮັບສ້ອມ / ໃບຮັບເຄື່ອງ' : 'ໃບຮັບເງິນ';
+
+        const rowsHtml = (Array.isArray(doc.items) ? doc.items : []).map((it, i) => {
+          const qty = parseNum(it.qty) || 1;
+          const price = parseNum(it.price);
+          const lineAmt = qty * price;
+          return `
+            <tr>
+              <td class="en-num">${i + 1}</td>
+              <td>${escapeHtml(it.name || 'ລາຍການ')}</td>
+              <td class="en-num">${qty}</td>
+              <td class="en-num">${formatMoney(price, curr)}</td>
+              <td class="en-num">${formatMoney(lineAmt, curr)}</td>
+            </tr>
+          `;
+        }).join('');
+
+        const qrHtml = shopInfo.qrDataUrl
+          ? `<div class="bill-qr-box">
+               <img src="${escapeHtml(shopInfo.qrDataUrl)}" alt="QR Code" />
+               <div style="font-size:9.5px;color:var(--muted);margin-top:3px;">${escapeHtml(shopInfo.qrLabel || 'ສະແກນຊຳລະ')}</div>
+             </div>`
+          : `<div class="bill-qr-box" style="display:flex;align-items:center;justify-content:center;min-height:104px;color:var(--muted);font-size:10px;">
+               ບໍ່ມີ QR Code
+             </div>`;
+
+        const kipSubRow = (curr !== '₭' && rate > 0)
+          ? `<tr><td style="color:var(--muted);font-size:10.5px;">ທຽບເທົ່າກີບ:</td><td class="en-num" style="color:var(--info);font-size:10.5px;">${formatMoney(toKipAmount(total, curr, rate), '₭')}</td></tr>`
+          : '';
+
+        if (bodyEl) {
+          bodyEl.innerHTML = `
+            <div class="bill-info-panel">
+              <div>
+                <div><strong>ລູກຄ້າ:</strong> ${escapeHtml(doc.custName || 'ລູກຄ້າທົ່ວໄປ')}</div>
+                <div><strong>ເບີໂທ:</strong> <span class="en-num">${escapeHtml(doc.custPhone || '-')}</span></div>
+                <div><strong>ທີ່ຢູ່:</strong> ${escapeHtml(doc.custAddr || '-')}</div>
+                ${doc.custSocial ? `<div><strong>FB/WA:</strong> ${escapeHtml(doc.custSocial)}</div>` : ''}
+              </div>
+              <div class="bill-info-right">
+                <div><strong>ສະຖານະ:</strong> ${escapeHtml(doc.docStatus || '-')}</div>
+                ${doc.techName ? `<div><strong>ຊ່າງ:</strong> ${escapeHtml(doc.techName)}</div>` : ''}
+                ${doc.deviceModel ? `<div><strong>ລຸ້ນ:</strong> ${escapeHtml(doc.deviceModel)}</div>` : ''}
+                ${doc.serialNo ? `<div><strong>S/N:</strong> <span class="en-num">${escapeHtml(doc.serialNo)}</span></div>` : ''}
+                ${doc.symptom ? `<div><strong>ອາການ:</strong> ${escapeHtml(doc.symptom)}</div>` : ''}
+              </div>
+            </div>
+
+            <table class="bill-table">
+              <thead>
+                <tr>
+                  <th style="width:32px;">#</th>
+                  <th>ລາຍການ</th>
+                  <th>ຈຳນວນ</th>
+                  <th>ລາຄາ</th>
+                  <th style="text-align:right;">ລວມ</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+
+            <div class="bill-summary-card">
+              ${qrHtml}
+              <table class="bill-calc-table">
+                <tr>
+                  <td>ລວມທັງໝົດ:</td>
+                  <td class="en-num" style="color:var(--primary);">${formatMoney(total, curr)}</td>
+                </tr>
+                ${kipSubRow}
+                <tr>
+                  <td>ເງິນມັດຈຳ (${escapeHtml(depCurr)}):</td>
+                  <td class="en-num" style="color:#9c7106;">${formatMoney(deposit, depCurr)}</td>
+                </tr>
+                <tr>
+                  <td>ຄ້າງຊຳລະ:</td>
+                  <td class="en-num" style="color:${balance > 0 ? 'var(--danger)' : 'var(--primary)'};">${formatMoney(balance, curr)}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="signature-row" style="margin-top:14px;">
+              <div>
+                <div class="sig-line"></div>
+                <div style="font-weight:700;">ຜູ້ຮັບເງິນ / ຜູ້ຮັບເຄື່ອງ</div>
+              </div>
+              <div>
+                <div class="sig-line"></div>
+                <div style="font-weight:700;">ລູກຄ້າ</div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      function renderHome() {
+        const now = new Date();
+        const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const curYear = String(now.getFullYear());
+
+        let monthKip = 0;
+        let yearKip = 0;
+        let depositKip = 0;
+        let balanceKip = 0;
+
+        docs.forEach(d => {
+          const { total, deposit, balance } = computeDocTotals(d);
+          const curr = d.currency || '₭';
+          const depCurr = d.depositCurrency || curr;
+          const rate = parseNum(d.exchangeRate);
+
+          const totKip = toKipAmount(total, curr, rate);
+          const depKip = toKipAmount(deposit, depCurr, rate);
+          const balKip = totKip - depKip;
+
+          depositKip += depKip;
+          if (balKip > 0) balanceKip += balKip;
+
+          if (matchesPeriodPrefix(d, curMonth)) monthKip += totKip;
+          if (matchesPeriodPrefix(d, curYear)) yearKip += totKip;
+        });
+
+        const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+        setText('dashMonthTotal', formatMoney(monthKip, '₭'));
+        setText('dashDepositTotal', formatMoney(depositKip, '₭'));
+        setText('dashBalanceTotal', formatMoney(balanceKip, '₭'));
+        setText('dashYearTotal', formatMoney(yearKip, '₭'));
+
+        const filtered = docs.filter(d => {
+          if (currentFilter === 'repair') return d.docType === 'repair';
+          if (currentFilter === 'receipt') return d.docType === 'receipt';
+          if (currentFilter === 'pending') {
+            const { balance } = computeDocTotals(d);
+            return balance > 0 || ['ກຳລັງສ້ອມ', 'ລໍຖ້າອາໄຫຼ່', 'ຄ້າງຊຳລະ'].includes(d.docStatus);
+          }
+          if (currentFilter === 'done') {
+            return ['ສຳເລັດແລ້ວ', 'ຈ່າຍຄົບແລ້ວ', 'ສົ່ງມອບແລ້ວ'].includes(d.docStatus);
+          }
+          return true;
+        });
+
+        setText('homeDocCount', `${filtered.length} ລາຍການ`);
+        const listEl = document.getElementById('homeDocList');
+        if (!listEl) return;
+
+        if (!filtered.length) {
+          listEl.innerHTML = '<div class="empty-state">ບໍ່ມີລາຍການເອກະສານ</div>';
+          return;
+        }
+
+        listEl.innerHTML = filtered.slice(0, 15).map(d => {
+          const { total, balance } = computeDocTotals(d);
+          const curr = d.currency || '₭';
+          const badgeCls = d.docType === 'repair' ? 'badge-repair' : 'badge-receipt';
+          const badgeTxt = d.docType === 'repair' ? '🔧 ໃບຮັບສ້ອມ' : '🧾 ໃບຮັບເງິນ';
+          return `
+            <div class="doc-item">
+              <div class="doc-top">
+                <div>
+                  <span class="doc-id en-num">${escapeHtml(d.docNo || d.id)}</span>
+                  <span class="doc-type-badge ${badgeCls}" style="margin-left:6px;">${badgeTxt}</span>
+                </div>
+                <span style="font-size:11.5px;font-weight:700;color:${balance > 0 ? 'var(--danger)' : 'var(--primary)'};">${escapeHtml(d.docStatus || '')}</span>
+              </div>
+              <div class="doc-meta en-num">
+                👤 ${escapeHtml(d.custName || 'ລູກຄ້າທົ່ວໄປ')}${d.custPhone ? ' • ' + escapeHtml(d.custPhone) : ''} • 📅 ${escapeHtml(d.docDate || '')}
+                ${d.techName ? `<br>👷 ຊ່າງ: ${escapeHtml(d.techName)}` : ''}
+              </div>
+              <div class="doc-foot">
+                <div class="doc-amount en-num">${formatMoney(total, curr)}${balance > 0 ? ` <span style="font-size:11px;color:var(--danger);">(ຄ້າງ ${formatMoney(balance, curr)})</span>` : ''}</div>
+                <div class="doc-actions">
+                  <button type="button" class="btn btn-outline btn-sm" data-printdoc="${escapeHtml(d.id)}">🖨️</button>
+                  <button type="button" class="btn btn-outline btn-sm" data-editdoc="${escapeHtml(d.id)}">ແກ້ໄຂ</button>
+                  ${(isOwner() || currentSession.permissions?.deleteDoc) ? `<button type="button" class="btn btn-danger btn-sm" data-deldoc="${escapeHtml(d.id)}">ລຶບ</button>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderAllDocs() {
+        const q = (document.getElementById('docSearchInput')?.value || '').trim().toLowerCase();
+        const listEl = document.getElementById('allDocList');
+        if (!listEl) return;
+
+        const filtered = docs.filter(d => {
+          if (currentDocTypeFilter !== 'all' && d.docType !== currentDocTypeFilter) return false;
+          if (!q) return true;
+          const hay = [
+            d.docNo, d.custName, d.custPhone, d.deviceModel, d.serialNo, d.symptom, d.techName, d.docDate, d.docStatus
+          ].join(' ').toLowerCase();
+          return hay.includes(q);
+        });
+
+        if (!filtered.length) {
+          listEl.innerHTML = '<div class="card"><div class="empty-state">ບໍ່ພົບເອກະສານທີ່ຄົ້ນຫາ</div></div>';
+          return;
+        }
+
+        listEl.innerHTML = filtered.map(d => {
+          const { total, balance } = computeDocTotals(d);
+          const curr = d.currency || '₭';
+          const badgeCls = d.docType === 'repair' ? 'badge-repair' : 'badge-receipt';
+          const badgeTxt = d.docType === 'repair' ? '🔧 ໃບຮັບສ້ອມ' : '🧾 ໃບຮັບເງິນ';
+          return `
+            <div class="doc-item">
+              <div class="doc-top">
+                <div>
+                  <span class="doc-id en-num">${escapeHtml(d.docNo || d.id)}</span>
+                  <span class="doc-type-badge ${badgeCls}" style="margin-left:6px;">${badgeTxt}</span>
+                </div>
+                <span style="font-size:11.5px;font-weight:700;color:var(--primary);">${escapeHtml(d.docStatus || '')}</span>
+              </div>
+              <div class="doc-meta en-num">
+                👤 ${escapeHtml(d.custName || '')}${d.custPhone ? ' • ' + escapeHtml(d.custPhone) : ''} • 📅 ${escapeHtml(d.docDate || '')}
+                ${d.deviceModel ? `<br>💻 ${escapeHtml(d.deviceModel)}${d.serialNo ? ' (S/N: ' + escapeHtml(d.serialNo) + ')' : ''}` : ''}
+                ${d.techName ? `<br>👷 ຊ່າງ: ${escapeHtml(d.techName)}` : ''}
+              </div>
+              <div class="doc-foot">
+                <div class="doc-amount en-num">${formatMoney(total, curr)}${balance > 0 ? ` <span style="font-size:11px;color:var(--danger);">(ຄ້າງ ${formatMoney(balance, curr)})</span>` : ''}</div>
+                <div class="doc-actions">
+                  <button type="button" class="btn btn-outline btn-sm" data-printdoc="${escapeHtml(d.id)}">🖨️ ບິນ</button>
+                  <button type="button" class="btn btn-outline btn-sm" data-editdoc="${escapeHtml(d.id)}">ແກ້ໄຂ</button>
+                  ${(isOwner() || currentSession.permissions?.deleteDoc) ? `<button type="button" class="btn btn-danger btn-sm" data-deldoc="${escapeHtml(d.id)}">ລຶບ</button>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function populateReportTechSelect() {
+        const sel = document.getElementById('repTechSelect');
+        if (!sel) return;
+        const prev = sel.value || 'ALL';
+        const names = new Set();
+        technicians.forEach(t => { if (t && t.name) names.add(String(t.name).trim()); });
+        docs.forEach(d => { if (d && d.techName) names.add(String(d.techName).trim()); });
+
+        let html = '<option value="ALL">ຊ່າງທັງໝົດ</option>';
+        names.forEach(n => {
+          html += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
+        });
+        sel.innerHTML = html;
+        if (sel.querySelector(`option[value="${CSS.escape(prev)}"]`)) {
+          sel.value = prev;
+        }
+      }
+
+      function renderReports() {
+        renderShopBranding();
+        populateReportTechSelect();
+
+        const pType = document.getElementById('repPeriodType')?.value || 'month';
+        const mWrap = document.getElementById('repMonthWrap');
+        const yWrap = document.getElementById('repYearWrap');
+        const techFilterWrap = document.getElementById('repTechFilterWrap');
+
+        if (mWrap) mWrap.style.display = pType === 'month' ? 'block' : 'none';
+        if (yWrap) yWrap.style.display = pType === 'year' ? 'block' : 'none';
+        if (techFilterWrap) techFilterWrap.style.display = currentReportTab === 'tech' ? 'block' : 'none';
+
+        const now = new Date();
+        const mVal = document.getElementById('repMonthInput')?.value || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const yVal = document.getElementById('repYearInput')?.value || String(now.getFullYear());
+        const prefix = pType === 'month' ? mVal : String(yVal);
+
+        const titleEl = document.getElementById('repDocTitle');
+        const periodEl = document.getElementById('repPeriodLabel');
+        if (titleEl) {
+          titleEl.textContent = currentReportTab === 'finance'
+            ? (pType === 'month' ? 'ບົດລາຍງານສະຫຼຸບຍອດເງິນລາຍເດືອນ' : 'ບົດລາຍງານສະຫຼຸບຍອດເງິນລາຍປີ')
+            : (pType === 'month' ? 'ບົດລາຍງານຜົນງານຊ່າງສ້ອມລາຍເດືອນ' : 'ບົດລາຍງານຜົນງານຊ່າງສ້ອມລາຍປີ');
+        }
+        if (periodEl) {
+          periodEl.textContent = pType === 'month' ? `ປະຈຳເດືອນ: ${mVal}` : `ປະຈຳປີ: ${yVal}`;
+        }
+
+        const finBody = document.getElementById('financeReportBody');
+        const techBody = document.getElementById('techReportBody');
+
+        const periodDocs = docs.filter(d => matchesPeriodPrefix(d, prefix));
+
+        if (currentReportTab === 'finance') {
+          if (finBody) finBody.style.display = 'block';
+          if (techBody) techBody.style.display = 'none';
+
+          let sumTotalKip = 0;
+          let sumDepositKip = 0;
+          let sumBalanceKip = 0;
+
+          periodDocs.forEach(d => {
+            const { total, deposit } = computeDocTotals(d);
+            const curr = d.currency || '₭';
+            const depCurr = d.depositCurrency || curr;
+            const rate = parseNum(d.exchangeRate);
+
+            const totKip = toKipAmount(total, curr, rate);
+            const depKip = toKipAmount(deposit, depCurr, rate);
+            const balKip = totKip - depKip;
+
+            sumTotalKip += totKip;
+            sumDepositKip += depKip;
+            if (balKip > 0) sumBalanceKip += balKip;
+          });
+
+          const rowsHtml = periodDocs.length
+            ? periodDocs.map(d => {
+                const { total } = computeDocTotals(d);
+                const curr = d.currency || '₭';
+                return `
+                  <tr>
+                    <td class="en-num">${escapeHtml(d.docNo || d.id)}</td>
+                    <td class="en-num">${escapeHtml(getDocIsoDate(d) || d.docDate || '')}</td>
+                    <td>${escapeHtml(d.custName || '')}</td>
+                    <td class="en-num" style="text-align:right;font-weight:700;">${formatMoney(total, curr)}</td>
+                  </tr>
+                `;
+              }).join('')
+            : `<tr><td colspan="4" class="empty-state" style="padding:12px;">ບໍ່ມີຂໍ້ມູນໃນຊ່ວງເວລານີ້</td></tr>`;
+
+          if (finBody) {
+            finBody.innerHTML = `
+              <div class="summary-grid">
+                <div class="stat-box green">
+                  <div class="stat-label">ຍອດລວມ (₭)</div>
+                  <div class="stat-val en-num">${formatMoney(sumTotalKip, '₭')}</div>
+                </div>
+                <div class="stat-box gold">
+                  <div class="stat-label">ມັດຈຳ (₭)</div>
+                  <div class="stat-val en-num">${formatMoney(sumDepositKip, '₭')}</div>
+                </div>
+                <div class="stat-box red">
+                  <div class="stat-label">ຄ້າງຊຳລະ (₭)</div>
+                  <div class="stat-val en-num">${formatMoney(sumBalanceKip, '₭')}</div>
+                </div>
+                <div class="stat-box blue">
+                  <div class="stat-label">ຈຳນວນເອກະສານ</div>
+                  <div class="stat-val en-num">${periodDocs.length} ບິນ</div>
+                </div>
+              </div>
+              <table class="bill-table">
+                <thead>
+                  <tr>
+                    <th>ເລກທີ</th>
+                    <th>ວັນທີ</th>
+                    <th>ລູກຄ້າ</th>
+                    <th style="text-align:right;">ຍອດລວມ</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            `;
+          }
+        } else {
+          if (finBody) finBody.style.display = 'none';
+          if (techBody) techBody.style.display = 'block';
+
+          const selectedTech = document.getElementById('repTechSelect')?.value || 'ALL';
+          const techFiltered = periodDocs.filter(d => {
+            if (!d.techName) return false;
+            return selectedTech === 'ALL' || String(d.techName).trim() === selectedTech;
+          });
+
+          let techTotalKip = 0;
+          techFiltered.forEach(d => {
+            const { total } = computeDocTotals(d);
+            techTotalKip += toKipAmount(total, d.currency || '₭', d.exchangeRate);
+          });
+
+          const tRows = techFiltered.length
+            ? techFiltered.map(d => {
+                const { total } = computeDocTotals(d);
+                const curr = d.currency || '₭';
+                return `
+                  <tr>
+                    <td class="en-num">${escapeHtml(d.docNo || d.id)}</td>
+                    <td>${escapeHtml(d.techName || '-')}</td>
+                    <td>${escapeHtml(d.deviceModel || d.custName || '-')}</td>
+                    <td class="en-num" style="text-align:right;font-weight:700;">${formatMoney(total, curr)}</td>
+                  </tr>
+                `;
+              }).join('')
+            : `<tr><td colspan="4" class="empty-state" style="padding:12px;">ບໍ່ມີຜົນງານຊ່າງໃນຊ່ວງເວລານີ້</td></tr>`;
+
+          if (techBody) {
+            techBody.innerHTML = `
+              <div class="summary-grid">
+                <div class="stat-box green">
+                  <div class="stat-label">ຍອດຜົນງານຊ່າງ (₭)</div>
+                  <div class="stat-val en-num">${formatMoney(techTotalKip, '₭')}</div>
+                </div>
+                <div class="stat-box blue">
+                  <div class="stat-label">ຈຳນວນວຽກສ້ອມ</div>
+                  <div class="stat-val en-num">${techFiltered.length} ງານ</div>
+                </div>
+              </div>
+              <table class="bill-table">
+                <thead>
+                  <tr>
+                    <th>ເລກທີ</th>
+                    <th>ຊື່ຊ່າງ</th>
+                    <th>ອຸປະກອນ/ລູກຄ້າ</th>
+                    <th style="text-align:right;">ມູນຄ່າ</th>
+                  </tr>
+                </thead>
+                <tbody>${tRows}</tbody>
+              </table>
+            `;
+          }
+        }
+      }
+
+      function renderAll() {
+        renderShopBranding();
+        renderHome();
+        renderAllDocs();
+        renderTechManagerList();
+        renderStaffList();
+        populatePrintDocSelect();
+        renderPrintBillPreview();
+        renderReports();
+      }
+
+      function switchView(viewKey) {
+        if (!currentSession.isLoggedIn) {
+          applySessionUI();
+          return;
+        }
+        if (viewKey === 'new') {
+          openNewEditor('receipt');
+          return;
+        }
+        if (!canAccess(viewKey)) {
+          showToast('ບໍ່ມີສິດເຂົ້າເຖິງສ່ວນນີ້');
+          return;
+        }
+
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+        const target = document.getElementById(`view-${viewKey}`);
+        if (target) target.classList.add('active');
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.nav === viewKey);
+        });
+
+        if (viewKey === 'reports') renderReports();
+        if (viewKey === 'printbill') {
+          populatePrintDocSelect();
+          renderPrintBillPreview();
+        }
+        if (viewKey === 'settings') populateShopSettingsForm();
+        if (viewKey === 'techs') renderTechManagerList();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function openTechModal() {
+        renderTechChipsInModal();
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+        setVal('mDeviceModel', document.getElementById('fDeviceModel')?.value || draftTech.deviceModel);
+        setVal('mSerialNo', document.getElementById('fSerialNo')?.value || draftTech.serialNo);
+        setVal('mSymptom', document.getElementById('fSymptom')?.value || draftTech.symptom);
+        setVal('mTechName', draftTech.techName || document.getElementById('fReceiptTechName')?.value || '');
+        setVal('mTechStatus', draftTech.techStatus || document.getElementById('fDocStatus')?.value || 'ກຳລັງສ້ອມ');
+        document.getElementById('techModal')?.classList.add('open');
+      }
+
+      function closeTechModal() {
+        document.getElementById('techModal')?.classList.remove('open');
+      }
+
+      function saveTechModal() {
+        draftTech = {
+          deviceModel: (document.getElementById('mDeviceModel')?.value || '').trim(),
+          serialNo: (document.getElementById('mSerialNo')?.value || '').trim(),
+          symptom: (document.getElementById('mSymptom')?.value || '').trim(),
+          techName: (document.getElementById('mTechName')?.value || '').trim(),
+          techStatus: document.getElementById('mTechStatus')?.value || 'ກຳລັງສ້ອມ'
+        };
+
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        setVal('fDeviceModel', draftTech.deviceModel);
+        setVal('fSerialNo', draftTech.serialNo);
+        setVal('fSymptom', draftTech.symptom);
+        setVal('fDocStatus', draftTech.techStatus);
+        populateReceiptTechDropdown(draftTech.techName);
+        updateTechBannerText();
+        closeTechModal();
+        showToast('ບັນທຶກຂໍ້ມູນຝ່າຍຊ່າງແລ້ວ');
+      }
+
+      function downloadElementAsPng(elementId, filenamePrefix) {
+        const el = document.getElementById(elementId);
+        if (!el || typeof html2canvas !== 'function') {
+          showToast('ບໍ່ສາມາດສ້າງຮູບພາບໄດ້');
+          return;
+        }
+        showToast('ກຳລັງສ້າງຮູບພາບ PNG...');
+        html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+          showToast('ດາວໂຫຼດຮູບ PNG ສຳເລັດ!');
+        }).catch(() => {
+          showToast('ເກີດຂໍ້ຜິດພາດໃນການສ້າງຮູບ');
+        });
+      }
+
+      function getGasUrl() {
+        try {
+          const saved = (localStorage.getItem(STORAGE_KEYS.GAS_URL) || '').trim();
+          return saved || DEFAULT_GSHEET_WEBAPP_URL.trim();
+        } catch (e) {
+          return DEFAULT_GSHEET_WEBAPP_URL.trim();
+        }
+      }
+
+      function checkUrlParamGas() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const gasParam = (params.get('gas') || '').trim();
+          if (gasParam && gasParam.startsWith('https://')) {
+            localStorage.setItem(STORAGE_KEYS.GAS_URL, gasParam);
+            const inp = document.getElementById('gasUrlInput');
+            if (inp) inp.value = gasParam;
+          } else {
+            const inp = document.getElementById('gasUrlInput');
+            if (inp) inp.value = getGasUrl();
+          }
+        } catch (e) {}
+      }
+
+      function applyRemotePayload(payload) {
+        if (!payload) return;
+        const list = Array.isArray(payload) ? payload : (Array.isArray(payload.data) ? payload.data : []);
+        if (list.length) {
+          const map = new Map();
+          docs.forEach(d => map.set(String(d.id), d));
+          list.forEach(raw => {
+            const norm = normalizeIncomingDoc(raw);
+            if (norm) map.set(String(norm.id), norm);
+          });
+          docs = Array.from(map.values()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        }
+        if (payload.shop && typeof payload.shop === 'object') {
+          shopInfo = { ...shopInfo, ...payload.shop };
+        }
+        if (Array.isArray(payload.technicians) && payload.technicians.length) {
+          technicians = payload.technicians;
+        }
+        if (Array.isArray(payload.staff) && payload.staff.length) {
+          staffList = payload.staff;
+        }
+        saveLocalData();
+        populateLoginAccountOptions();
+        renderAll();
+      }
+
+      function syncPullFromGas(silent = false) {
+        const url = getGasUrl();
+        if (!url) {
+          if (!silent) showToast('ກະລຸນາໃສ່ລິ້ງ Google Apps Script ກ່ອນ');
+          return;
+        }
+        setSyncStatus('syncing', 'ກຳລັງດຶງຂໍ້ມູນ...');
+        const cbName = 'lyFixmanJsonpCb_' + Date.now();
+        const script = document.createElement('script');
+        const timer = setTimeout(() => {
+          cleanup();
+          setSyncStatus('error', 'ດຶງຂໍ້ມູນຊ້າ/ຜິດພາດ');
+          if (!silent) showToast('ບໍ່ສາມາດດຶງຂໍ້ມູນຈາກ Sheet ໄດ້');
+        }, 12000);
+
+        function cleanup() {
+          clearTimeout(timer);
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+        }
+
+        window[cbName] = function (data) {
+          cleanup();
+          applyRemotePayload(data);
+          setSyncStatus('synced', 'ຊິ້ງສຳເລັດ');
+          if (!silent) showToast('ດຶງຂໍ້ມູນຈາກ Google Sheets ສຳເລັດ!');
+        };
+
+        script.src = `${url}${url.includes('?') ? '&' : '?'}action=get&callback=${encodeURIComponent(cbName)}&_=${Date.now()}`;
+        script.onerror = function () {
+          cleanup();
+          setSyncStatus('error', 'ເຊື່ອມຕໍ່ບໍ່ໄດ້');
+          if (!silent) showToast('ເຊື່ອມຕໍ່ Google Sheets ບໍ່ໄດ້');
+        };
+        document.body.appendChild(script);
+      }
+
+      function postPayloadToGas(obj, successMsg) {
+        const url = getGasUrl();
+        if (!url) return;
+        setSyncStatus('syncing', 'ກຳລັງສົ່ງຂໍ້ມູນ...');
+        fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(obj)
+        }).then(() => {
+          setSyncStatus('synced', 'ສົ່ງຂໍ້ມູນແລ້ວ');
+          if (successMsg) showToast(successMsg);
+        }).catch(() => {
+          setSyncStatus('error', 'ສົ່ງຂໍ້ມູນຜິດພາດ');
+        });
+      }
+
+      function syncPushDocToGas(docObj) {
+        postPayloadToGas({ action: 'saveDoc', doc: docObj });
+      }
+
+      function syncPushShopToGas(shopObj) {
+        postPayloadToGas({ action: 'saveShop', shop: shopObj });
+      }
+
+      function syncPushTechToGas(techObj) {
+        postPayloadToGas({ action: 'saveTech', tech: techObj });
+      }
+
+      function syncPushStaffToGas(staffObj) {
+        postPayloadToGas({ action: 'saveStaff', staff: staffObj });
+      }
+
+      function syncPushAllDocsToGas() {
+        const url = getGasUrl();
+        if (!url) {
+          showToast('ກະລຸນາໃສ່ລິ້ງ Google Apps Script ກ່ອນ');
+          return;
+        }
+        docs.forEach(d => syncPushDocToGas(d));
+        showToast(`ສົ່ງຂໍ້ມູນ ${docs.length} ເອກະສານໄປ Google Sheets ແລ້ວ`);
+      }
+
+      function copyTextToClipboard(text, successMsg) {
+        if (!text) return;
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast(successMsg || 'ຄັດລອກສຳເລັດ!');
+        } catch (e) {
+          showToast('ບໍ່ສາມາດຄັດລອກໄດ້');
+        }
+        document.body.removeChild(ta);
+      }
+
       function bindEvents() {
+        document.getElementById('btnLoginSubmit')?.addEventListener('click', handleLoginSubmit);
+        document.getElementById('loginPinInput')?.addEventListener('keydown', e => {
+          if (e.key === 'Enter') handleLoginSubmit();
+        });
+
         document.getElementById('btnTogglePinEye')?.addEventListener('click', () => {
           const inp = document.getElementById('loginPinInput');
-          if (!inp) return;
-          inp.type = inp.type === 'password' ? 'text' : 'password';
+          if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
         });
 
         document.getElementById('btnForgotPin')?.addEventListener('click', () => {
-          showToast('🔑 ກະລຸນາກວດສອບລະຫັດ PIN ໃນໜ້າຕັ້ງຄ່າຂອງເຈົ້າຂອງຮ້ານ');
+          const accVal = document.getElementById('loginAccountSelect')?.value || 'owner';
+          if (accVal === 'owner') {
+            showToast(`PIN ເລີ່ມຕົ້ນເຈົ້າຂອງຮ້ານແມ່ນ: ${ownerPin}`);
+          } else {
+            showToast('ຕິດຕໍ່ເຈົ້າຂອງຮ້ານເພື່ອກວດສອບ PIN ພະນັກງານ');
+          }
         });
 
-        document.getElementById('btnLoginSubmit')?.addEventListener('click', () => {
-          const acc = document.getElementById('loginAccountSelect')?.value || 'owner';
-          const pin = document.getElementById('loginPinInput')?.value || '';
-          performLogin(acc, pin);
-        });
-
-        document.getElementById('btnSwitchRoleBadge')?.addEventListener('click', () => {
-          openLoginScreen();
-        });
-
+        document.getElementById('btnSwitchRoleBadge')?.addEventListener('click', logoutToLoginScreen);
         document.getElementById('btnTopSync')?.addEventListener('click', () => syncPullFromGas(false));
         document.getElementById('btnTopSettings')?.addEventListener('click', () => switchView('settings'));
 
@@ -3558,125 +3647,54 @@ function doPost(e) {
         document.getElementById('btnQuickRepair')?.addEventListener('click', () => openNewEditor('repair'));
         document.getElementById('btnDocsNew')?.addEventListener('click', () => openNewEditor('receipt'));
 
-        document.getElementById('homeFilters')?.addEventListener('click', e => {
-          const chip = e.target.closest('.chip');
-          if (!chip) return;
-          currentFilter = chip.dataset.filter || 'all';
-          document.querySelectorAll('#homeFilters .chip').forEach(c => c.classList.toggle('active', c === chip));
-          renderHome();
+        document.querySelectorAll('#homeFilters .chip').forEach(ch => {
+          ch.addEventListener('click', () => {
+            document.querySelectorAll('#homeFilters .chip').forEach(c => c.classList.remove('active'));
+            ch.classList.add('active');
+            currentFilter = ch.dataset.filter || 'all';
+            renderHome();
+          });
         });
 
-        document.getElementById('docsTypeFilters')?.addEventListener('click', e => {
-          const chip = e.target.closest('.chip');
-          if (!chip) return;
-          currentDocTypeFilter = chip.dataset.docfilter || 'all';
-          document.querySelectorAll('#docsTypeFilters .chip').forEach(c => c.classList.toggle('active', c === chip));
-          renderAllDocs();
+        document.querySelectorAll('#docsTypeFilters .chip').forEach(ch => {
+          ch.addEventListener('click', () => {
+            document.querySelectorAll('#docsTypeFilters .chip').forEach(c => c.classList.remove('active'));
+            ch.classList.add('active');
+            currentDocTypeFilter = ch.dataset.docfilter || 'all';
+            renderAllDocs();
+          });
         });
 
         document.getElementById('docSearchInput')?.addEventListener('input', renderAllDocs);
 
-        document.getElementById('btnTypeReceipt')?.addEventListener('click', () => setDocTypeUI('receipt'));
-        document.getElementById('btnTypeRepair')?.addEventListener('click', () => setDocTypeUI('repair'));
-        document.getElementById('btnOpenTechModal')?.addEventListener('click', openTechModal);
-        document.getElementById('btnCloseTechModal')?.addEventListener('click', closeTechModal);
-        document.getElementById('btnCancelTechModal')?.addEventListener('click', closeTechModal);
-        document.getElementById('btnSaveTechModal')?.addEventListener('click', saveTechModal);
-
-        document.getElementById('techQuickChips')?.addEventListener('click', e => {
-          const pick = e.target.closest('[data-pick-tech]');
-          if (!pick) return;
-          const inp = document.getElementById('mTechName');
-          if (inp) inp.value = pick.dataset.pickTech || '';
+        document.getElementById('btnTypeReceipt')?.addEventListener('click', () => setEditorDocType('receipt'));
+        document.getElementById('btnTypeRepair')?.addEventListener('click', () => setEditorDocType('repair'));
+        document.getElementById('fDocNo')?.addEventListener('input', e => {
+          const badge = document.getElementById('editorDocBadge');
+          if (badge) badge.textContent = e.target.value.trim() || 'REC-0001';
         });
 
         document.getElementById('btnAddItemRow')?.addEventListener('click', () => {
           draftItems.push({ name: '', qty: 1, price: 0 });
           renderItemsEditor();
-        });
-
-        document.getElementById('itemsContainer')?.addEventListener('click', e => {
-          const rm = e.target.closest('[data-remove-item]');
-          if (!rm) return;
-          const idx = parseInt(rm.dataset.removeItem, 10);
-          if (Number.isFinite(idx) && draftItems.length > 1) {
-            draftItems.splice(idx, 1);
-            renderItemsEditor();
-          }
-        });
-
-        document.getElementById('itemsContainer')?.addEventListener('input', e => {
-          const inp = e.target.closest('[data-item-field]');
-          if (!inp) return;
-          const idx = parseInt(inp.dataset.idx, 10);
-          const field = inp.dataset.itemField;
-          if (!Number.isFinite(idx) || !draftItems[idx]) return;
-
-          if (field === 'name') {
-            draftItems[idx].name = inp.value;
-          } else if (field === 'qty' || field === 'price') {
-            const cleaned = stripLeadingZeroString(inp.value);
-            if (inp.value !== cleaned) inp.value = cleaned;
-            draftItems[idx][field] = parseNum(cleaned);
-            recalcTotals();
-          }
+          recalcTotals();
         });
 
         ['fCurrency', 'fDepositCurrency', 'fExchangeRate', 'fDeposit'].forEach(id => {
-          const el = document.getElementById(id);
-          if (!el) return;
-          const evt = el.tagName === 'SELECT' ? 'change' : 'input';
-          el.addEventListener(evt, () => {
-            if (id === 'fExchangeRate' || id === 'fDeposit') {
-              const cleaned = stripLeadingZeroString(el.value);
-              if (el.value !== cleaned) el.value = cleaned;
-            }
-            recalcTotals();
-          });
+          document.getElementById(id)?.addEventListener('input', recalcTotals);
+          document.getElementById(id)?.addEventListener('change', recalcTotals);
         });
 
         document.getElementById('btnCancelEdit')?.addEventListener('click', () => switchView('home'));
         document.getElementById('btnSaveDoc')?.addEventListener('click', saveCurrentDocument);
 
-        document.addEventListener('click', e => {
-          const editBtn = e.target.closest('[data-edit-doc]');
-          if (editBtn) {
-            editDoc(editBtn.dataset.editDoc);
-            return;
-          }
-          const delBtn = e.target.closest('[data-del-doc]');
-          if (delBtn) {
-            deleteDoc(delBtn.dataset.delDoc);
-            return;
-          }
-          const printBtn = e.target.closest('[data-print-doc]');
-          if (printBtn) {
-            openPrintBill(printBtn.dataset.printDoc);
-            return;
-          }
-          const editTechBtn = e.target.closest('[data-edit-tech]');
-          if (editTechBtn) {
-            editTechProfile(editTechBtn.dataset.editTech);
-            return;
-          }
-          const delTechBtn = e.target.closest('[data-del-tech]');
-          if (delTechBtn) {
-            deleteTechProfile(delTechBtn.dataset.delTech);
-            return;
-          }
-          const editStaffBtn = e.target.closest('[data-edit-staff]');
-          if (editStaffBtn) {
-            editStaffProfile(editStaffBtn.dataset.editStaff);
-            return;
-          }
-          const delStaffBtn = e.target.closest('[data-del-staff]');
-          if (delStaffBtn) {
-            deleteStaffProfile(delStaffBtn.dataset.delStaff);
-          }
-        });
+        document.getElementById('btnOpenTechModal')?.addEventListener('click', openTechModal);
+        document.getElementById('btnCloseTechModal')?.addEventListener('click', closeTechModal);
+        document.getElementById('btnCancelTechModal')?.addEventListener('click', closeTechModal);
+        document.getElementById('btnSaveTechModal')?.addEventListener('click', saveTechModal);
 
-        document.getElementById('btnClearTechForm')?.addEventListener('click', clearTechForm);
         document.getElementById('btnSaveTechProfile')?.addEventListener('click', saveTechProfile);
+        document.getElementById('btnClearTechForm')?.addEventListener('click', clearTechProfileForm);
 
         document.getElementById('btnRepTabFinance')?.addEventListener('click', () => {
           currentReportTab = 'finance';
@@ -3697,108 +3715,142 @@ function doPost(e) {
           document.getElementById(id)?.addEventListener('input', renderReports);
         });
 
-        document.getElementById('btnDownloadReportPng')?.addEventListener('click', downloadReportPNG);
+        document.getElementById('btnDownloadReportPng')?.addEventListener('click', () => {
+          downloadElementAsPng('reportCaptureArea', currentReportTab === 'finance' ? 'LY_FIXMAN_Report' : 'LY_FIXMAN_TechReport');
+        });
 
         document.getElementById('printDocSelect')?.addEventListener('change', renderPrintBillPreview);
         document.getElementById('btnPrintBillNow')?.addEventListener('click', () => window.print());
-        document.getElementById('btnDownloadBillPng')?.addEventListener('click', async () => {
-          const area = document.getElementById('billPrintArea');
-          if (!area || typeof html2canvas !== 'function') return;
-          try {
-            showToast('⏳ ກຳລັງສ້າງຮູບໃບບິນ...');
-            const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff' });
-            const link = document.createElement('a');
-            link.download = `Bill_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            showToast('✅ ບັນທຶກຮູບໃບບິນສຳເລັດ!');
-          } catch (e) {
-            showToast('❌ ສ້າງຮູບໃບບິນບໍ່ສຳເລັດ');
-          }
-        });
-
-        document.getElementById('setShopLogoFile')?.addEventListener('change', e => {
-          const file = e.target.files && e.target.files[0];
-          handleImageFileUpload(file, 256, dataUrl => {
-            shopInfo.logoDataUrl = dataUrl;
-            saveLocalData();
-            applyShopBranding();
-            loadShopSettingsForm();
-            renderPrintBillPreview();
-          });
-        });
-
-        document.getElementById('btnClearShopLogo')?.addEventListener('click', () => {
-          shopInfo.logoDataUrl = '';
-          saveLocalData();
-          applyShopBranding();
-          loadShopSettingsForm();
-          renderPrintBillPreview();
-        });
-
-        document.getElementById('setShopQrFile')?.addEventListener('change', e => {
-          const file = e.target.files && e.target.files[0];
-          handleImageFileUpload(file, 400, dataUrl => {
-            shopInfo.qrDataUrl = dataUrl;
-            saveLocalData();
-            loadShopSettingsForm();
-            renderPrintBillPreview();
-          });
-        });
-
-        document.getElementById('btnClearShopQr')?.addEventListener('click', () => {
-          shopInfo.qrDataUrl = '';
-          saveLocalData();
-          loadShopSettingsForm();
-          renderPrintBillPreview();
+        document.getElementById('btnDownloadBillPng')?.addEventListener('click', () => {
+          const docNo = document.getElementById('billPrintDocNo')?.textContent || 'Bill';
+          downloadElementAsPng('billPrintArea', `LY_FIXMAN_${docNo}`);
         });
 
         document.getElementById('btnSaveShopSettings')?.addEventListener('click', saveShopSettings);
-        document.getElementById('btnClearStaffForm')?.addEventListener('click', clearStaffForm);
+        document.getElementById('setShopLogoFile')?.addEventListener('change', e => {
+          const f = e.target.files?.[0];
+          if (f) {
+            readImageFileToDataUrl(f, 256, dataUrl => {
+              shopInfo.logoDataUrl = dataUrl;
+              saveLocalData();
+              renderShopBranding();
+              showToast('ອັບໂຫຼດໂລໂກ້ຮ້ານແລ້ວ');
+            });
+          }
+        });
+        document.getElementById('btnClearShopLogo')?.addEventListener('click', () => {
+          shopInfo.logoDataUrl = '';
+          const inp = document.getElementById('setShopLogoFile');
+          if (inp) inp.value = '';
+          saveLocalData();
+          renderShopBranding();
+        });
+
+        document.getElementById('setShopQrFile')?.addEventListener('change', e => {
+          const f = e.target.files?.[0];
+          if (f) {
+            readImageFileToDataUrl(f, 400, dataUrl => {
+              shopInfo.qrDataUrl = dataUrl;
+              saveLocalData();
+              renderShopBranding();
+              showToast('ອັບໂຫຼດ QR Code ຮ້ານແລ້ວ');
+            });
+          }
+        });
+        document.getElementById('btnClearShopQr')?.addEventListener('click', () => {
+          shopInfo.qrDataUrl = '';
+          const inp = document.getElementById('setShopQrFile');
+          if (inp) inp.value = '';
+          saveLocalData();
+          renderShopBranding();
+        });
+
         document.getElementById('btnSaveStaffProfile')?.addEventListener('click', saveStaffProfile);
+        document.getElementById('btnClearStaffForm')?.addEventListener('click', clearStaffForm);
 
         document.getElementById('btnSaveOwnerPin')?.addEventListener('click', () => {
-          if (currentSession.role !== 'owner') {
-            showToast('👑 ສະເພາະເຈົ້າຂອງຮ້ານເທົ່ານັ້ນ');
+          if (!isOwner()) return;
+          const p = (document.getElementById('setOwnerPinInput')?.value || '').trim();
+          if (p.length < 4) {
+            showToast('ລະຫັດ PIN ຕ້ອງມີຢ່າງໜ້ອຍ 4 ຕົວອັກສອນ');
             return;
           }
-          const newPin = (document.getElementById('setOwnerPinInput')?.value || '').trim();
-          if (newPin.length < 4) {
-            showToast('ກະລຸນາໃສ່ລະຫັດ PIN ຢ່າງໜ້ອຍ 4 ຕົວ');
-            return;
-          }
-          ownerPin = newPin;
-          document.getElementById('setOwnerPinInput').value = '';
+          ownerPin = p;
+          const inp = document.getElementById('setOwnerPinInput');
+          if (inp) inp.value = '';
           saveLocalData();
-          showToast('🔑 ບັນທຶກລະຫັດ PIN ເຈົ້າຂອງຮ້ານໃໝ່ແລ້ວ!');
+          showToast('ບັນທຶກລະຫັດ PIN ເຈົ້າຂອງຮ້ານໃໝ່ແລ້ວ!');
         });
 
         document.getElementById('btnSaveGasUrl')?.addEventListener('click', () => {
-          const val = (document.getElementById('gasUrlInput')?.value || '').trim();
-          setGasUrl(val);
-          syncPullFromGas(false);
+          const url = (document.getElementById('gasUrlInput')?.value || '').trim();
+          localStorage.setItem(STORAGE_KEYS.GAS_URL, url);
+          showToast('ບັນທຶກລິ້ງແລ້ວ');
+          if (url) syncPullFromGas(false);
         });
 
         document.getElementById('btnUseEmbeddedUrl')?.addEventListener('click', () => {
-          setGasUrl(DEFAULT_GSHEET_WEBAPP_URL);
           const inp = document.getElementById('gasUrlInput');
           if (inp) inp.value = DEFAULT_GSHEET_WEBAPP_URL;
-          showToast('🔗 ໃຊ້ລິ້ງເລີ່ມຕົ້ນແລ້ວ');
+          localStorage.setItem(STORAGE_KEYS.GAS_URL, DEFAULT_GSHEET_WEBAPP_URL);
+          showToast('ຕັ້ງລິ້ງເລີ່ມຕົ້ນແລ້ວ');
         });
 
         document.getElementById('btnPullData')?.addEventListener('click', () => syncPullFromGas(false));
-        document.getElementById('btnPushData')?.addEventListener('click', () => syncPushToGas(false));
+        document.getElementById('btnPushData')?.addEventListener('click', syncPushAllDocsToGas);
 
         document.getElementById('btnCopyStaffLink')?.addEventListener('click', () => {
           const gas = getGasUrl();
-          const base = window.location.href.split('?')[0];
-          const shareUrl = gas ? `${base}?gas=${encodeURIComponent(gas)}` : base;
-          copyTextToClipboard(shareUrl, '🔗 ຄັດລອກລິ້ງແຊໃຫ້ພະນັກງານແລ້ວ!');
+          const baseUrl = window.location.href.split('?')[0];
+          const shareUrl = gas ? `${baseUrl}?gas=${encodeURIComponent(gas)}` : baseUrl;
+          copyTextToClipboard(shareUrl, 'ຄັດລອກລິ້ງແຊໃຫ້ພະນັກງານແລ້ວ!');
         });
 
         document.getElementById('btnCopyGasCode')?.addEventListener('click', () => {
           const codeTxt = document.getElementById('gasCodePreview')?.textContent || '';
-          copyTextToClipboard(codeTxt, '📋 ຄັດລອກໂຄດ Code.gs ແລ້ວ!');
+          copyTextToClipboard(codeTxt, 'ຄັດລອກໂຄດ Code.gs ແລ້ວ!');
+        });
+
+        document.addEventListener('input', e => {
+          const t = e.target;
+          if (!t) return;
+          if (t.matches('[data-itemname]')) {
+            const idx = parseInt(t.dataset.itemname, 10);
+            if (draftItems[idx]) draftItems[idx].name = t.value;
+          } else if (t.matches('[data-itemqty]')) {
+            const idx = parseInt(t.dataset.itemqty, 10);
+            if (draftItems[idx]) {
+              draftItems[idx].qty = t.value;
+              recalcTotals();
+            }
+          } else if (t.matches('[data-itemprice]')) {
+            const idx = parseInt(t.dataset.itemprice, 10);
+            if (draftItems[idx]) {
+              draftItems[idx].price = t.value;
+              recalcTotals();
+            }
+          }
+        });
+
+        document.addEventListener('click', e => {
+          const t = e.target.closest('button');
+          if (!t) return;
+
+          if (t.dataset.editdoc) editDoc(t.dataset.editdoc);
+          else if (t.dataset.deldoc) deleteDoc(t.dataset.deldoc);
+          else if (t.dataset.printdoc) openPrintBillForDoc(t.dataset.printdoc);
+          else if (t.dataset.delitem !== undefined) {
+            const idx = parseInt(t.dataset.delitem, 10);
+            draftItems.splice(idx, 1);
+            renderItemsEditor();
+            recalcTotals();
+          } else if (t.dataset.picktech) {
+            const inp = document.getElementById('mTechName');
+            if (inp) inp.value = t.dataset.picktech;
+          } else if (t.dataset.edittech) editTechProfile(t.dataset.edittech);
+          else if (t.dataset.deltech) deleteTechProfile(t.dataset.deltech);
+          else if (t.dataset.editstaff) editStaffProfile(t.dataset.editstaff);
+          else if (t.dataset.delstaff) deleteStaffProfile(t.dataset.delstaff);
         });
       }
 
@@ -3816,6 +3868,8 @@ function doPost(e) {
           yInp.value = String(now.getFullYear());
         }
 
+        currentSession.isLoggedIn = false;
+        saveLocalData();
         populateLoginAccountOptions();
         applySessionUI();
         bindEvents();
