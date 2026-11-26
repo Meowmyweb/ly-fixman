@@ -620,81 +620,199 @@
 
     .report-paper {
       background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 11px 12px;
+      border: 1px solid #d5e2da;
+      border-radius: 16px;
+      padding: 16px 15px;
       color: #18201c;
-      box-shadow: var(--shadow);
+      box-shadow: 0 6px 24px rgba(15, 45, 32, 0.06);
       max-width: 100%;
     }
 
-    .report-header-center {
-      text-align: center;
-      border-bottom: 1.5px solid var(--primary);
-      padding-bottom: 7px;
-      margin-bottom: 9px;
+    .report-top-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--gold);
+      margin-bottom: 12px;
+    }
+
+    .report-brand-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .report-logo-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #165940 0%, #0d3828 100%);
+      color: #ffffff;
+      border: 2px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .report-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .report-shop-name {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--primary);
-      line-height: 1.25;
+      line-height: 1.2;
+      text-align: left;
+    }
+
+    .report-tagline-txt {
+      font-size: 11px;
+      font-weight: 700;
+      color: #b5830a;
+      line-height: 1.3;
+      margin-top: 1px;
+      text-align: left;
     }
 
     .report-sub {
-      font-size: 10px;
+      font-size: 10.5px;
       color: var(--muted);
       line-height: 1.35;
+      text-align: left;
+      margin-top: 1px;
+    }
+
+    .report-print-date {
+      font-size: 10.5px;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .report-main-title {
+      text-align: center;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 6px 0 12px;
+      line-height: 1.3;
     }
 
     .report-paper .summary-grid {
-      gap: 7px;
-      margin-bottom: 8px;
+      gap: 9px;
+      margin-bottom: 14px;
     }
 
     .report-paper .stat-box {
-      border-radius: 11px;
-      padding: 8px 9px;
+      border-radius: 14px;
+      padding: 11px 12px;
       box-shadow: none;
     }
 
     .report-paper .stat-box::before {
-      top: 8px;
-      bottom: 8px;
-      width: 2.5px;
+      display: none;
+    }
+
+    .report-paper .stat-box.green {
+      background: #edf7f1;
+      border: 1px solid #c6e4d2;
+    }
+
+    .report-paper .stat-box.gold {
+      background: #fcf8ea;
+      border: 1px solid #efe0a8;
+    }
+
+    .report-paper .stat-box.red {
+      background: #fdf0f1;
+      border: 1px solid #f5ccd0;
+    }
+
+    .report-paper .stat-box.blue {
+      background: #edf5fc;
+      border: 1px solid #c6e0f7;
     }
 
     .report-paper .stat-label {
-      font-size: 9.5px;
-      margin-bottom: 2px;
+      font-size: 11px;
+      margin-bottom: 4px;
       line-height: 1.25;
+      color: #5c6862;
     }
 
     .report-paper .stat-val {
-      font-size: 12px;
-      line-height: 1.2;
+      font-size: 15px;
+      line-height: 1.25;
     }
 
-    .report-paper .bill-table {
-      font-size: 10px;
+    .report-list-heading {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      padding-bottom: 6px;
+      border-bottom: 1px solid #d5e2da;
       margin-bottom: 8px;
     }
 
-    .report-paper .bill-table th,
-    .report-paper .bill-table td {
-      padding: 5px 4px;
+    .report-entry-item {
+      padding: 8px 2px;
+      border-bottom: 1px dashed #dce5df;
+    }
+
+    .report-entry-item:last-child {
+      border-bottom: none;
+    }
+
+    .report-entry-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #18201c;
+    }
+
+    .report-entry-amt {
+      font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .report-entry-meta {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 2px;
     }
 
     .report-paper .signature-row {
-      gap: 12px;
-      margin-top: 12px;
-      font-size: 10px;
+      gap: 16px;
+      margin-top: 20px;
+      font-size: 12px;
     }
 
     .report-paper .sig-line {
-      height: 20px;
-      margin-bottom: 3px;
+      height: 28px;
+      margin-bottom: 4px;
+    }
+
+    .report-sig-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 2px;
     }
 
     .bill-sheet {
@@ -1407,24 +1525,33 @@
         </div>
 
         <div id="reportCaptureArea" class="report-paper">
-          <div class="report-header-center">
-            <div class="report-shop-name" id="repShopName">LY FIXMAN</div>
-            <div class="report-sub" id="repShopDetail">ລະບົບຈັດການຮ້ານສ້ອມແປງ</div>
-            <div style="font-size:11.5px;font-weight:700;color:var(--primary);margin-top:4px;line-height:1.25;" id="repDocTitle">ບົດລາຍງານສະຫຼຸບຍອດເງິນ</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:1px;" class="en-num" id="repPeriodLabel">-</div>
+          <div class="report-top-banner">
+            <div class="report-brand-left">
+              <div class="report-logo-box" id="repLogoBox">LY</div>
+              <div style="min-width:0;">
+                <div class="report-shop-name" id="repShopName">LY FIXMAN</div>
+                <div class="report-tagline-txt" id="repShopTagline">ວ່ອງໄວ ໝັ້ນໃຈ ບໍລິການດີ</div>
+                <div class="report-sub" id="repShopDetail">ລະບົບຈັດການຮ້ານສ້ອມແປງ</div>
+              </div>
+            </div>
+            <div class="report-print-date en-num" id="repPrintDateLabel">ວັນທີພິມ: -</div>
           </div>
+
+          <div class="report-main-title en-num" id="repDocTitle">ບົດສະຫຼຸບຍອດປະຈຳເດືອນ</div>
 
           <div id="financeReportBody"></div>
           <div id="techReportBody" style="display:none;"></div>
 
           <div class="signature-row">
             <div>
-              <div class="sig-line"></div>
               <div style="font-weight:700;">ເຈົ້າຂອງຮ້ານ</div>
+              <div class="sig-line"></div>
+              <div class="report-sig-sub">(ລາຍເຊັນ ແລະ ປະທັບຕາ)</div>
             </div>
             <div>
-              <div class="sig-line"></div>
               <div style="font-weight:700;">ຜູ້ສະຫຼຸບ</div>
+              <div class="sig-line"></div>
+              <div class="report-sig-sub">(ລາຍເຊັນຜູ້ລາຍງານ)</div>
             </div>
           </div>
         </div>
@@ -2176,6 +2303,7 @@ function doPost(e) {
 
         const topName = document.getElementById('topBrandName');
         const repName = document.getElementById('repShopName');
+        const repTag = document.getElementById('repShopTagline');
         const loginShopName = document.getElementById('loginShopName');
         const billShopName = document.getElementById('billPrintShopName');
         const billShopTag = document.getElementById('billPrintShopTagline');
@@ -2186,6 +2314,7 @@ function doPost(e) {
 
         if (topName) topName.textContent = name;
         if (repName) repName.textContent = name;
+        if (repTag) repTag.textContent = tagline;
         if (loginShopName) loginShopName.textContent = name;
         if (billShopName) billShopName.textContent = name;
         if (billShopTag) billShopTag.textContent = tagline;
@@ -2195,7 +2324,7 @@ function doPost(e) {
           billFooter.textContent = `✨ ${tagline || 'ວ່ອງໄວ ໝັ້ນໃຈ ບໍລິການດີ'} • ຂອບໃຈທີ່ໃຊ້ບໍລິການ ${name} ✨`;
         }
         if (repDetail) {
-          repDetail.textContent = [tagline, addr, contactText].filter(Boolean).join(' • ') || 'ລະບົບຈັດການຮ້ານສ້ອມແປງ';
+          repDetail.textContent = [addr, contactText].filter(Boolean).join(' • ') || 'ລະບົບຈັດການຮ້ານສ້ອມແປງ';
         }
 
         const logoHtml = shopInfo.logoDataUrl
@@ -2203,8 +2332,10 @@ function doPost(e) {
           : escapeHtml((shopInfo.logoText || 'LY').slice(0, 4));
 
         const topLogo = document.getElementById('topBrandLogo');
+        const repLogo = document.getElementById('repLogoBox');
         const billLogo = document.getElementById('billPrintLogoBox');
         if (topLogo) topLogo.innerHTML = logoHtml;
+        if (repLogo) repLogo.innerHTML = logoHtml;
         if (billLogo) billLogo.innerHTML = logoHtml;
 
         const logoPrevWrap = document.getElementById('setShopLogoPreviewWrap');
@@ -3223,14 +3354,22 @@ function doPost(e) {
         const prefix = pType === 'month' ? mVal : String(yVal);
 
         const titleEl = document.getElementById('repDocTitle');
-        const periodEl = document.getElementById('repPeriodLabel');
-        if (titleEl) {
-          titleEl.textContent = currentReportTab === 'finance'
-            ? (pType === 'month' ? 'ບົດລາຍງານສະຫຼຸບຍອດເງິນລາຍເດືອນ' : 'ບົດລາຍງານສະຫຼຸບຍອດເງິນລາຍປີ')
-            : (pType === 'month' ? 'ບົດລາຍງານຜົນງານຊ່າງສ້ອມລາຍເດືອນ' : 'ບົດລາຍງານຜົນງານຊ່າງສ້ອມລາຍປີ');
+        const printDateEl = document.getElementById('repPrintDateLabel');
+        if (printDateEl) {
+          const dNow = new Date();
+          const pDate = `${String(dNow.getDate()).padStart(2, '0')}/${String(dNow.getMonth() + 1).padStart(2, '0')}/${dNow.getFullYear()}`;
+          printDateEl.textContent = `ວັນທີພິມ: ${pDate}`;
         }
-        if (periodEl) {
-          periodEl.textContent = pType === 'month' ? `ປະຈຳເດືອນ: ${mVal}` : `ປະຈຳປີ: ${yVal}`;
+        if (titleEl) {
+          if (currentReportTab === 'finance') {
+            titleEl.textContent = pType === 'month'
+              ? `ບົດສະຫຼຸບຍອດປະຈຳເດືອນ (${mVal})`
+              : `ບົດສະຫຼຸບຍອດປະຈຳປີ (${yVal})`;
+          } else {
+            titleEl.textContent = pType === 'month'
+              ? `ບົດສະຫຼຸບຜົນງານຊ່າງປະຈຳເດືອນ (${mVal})`
+              : `ບົດສະຫຼຸບຜົນງານຊ່າງປະຈຳປີ (${yVal})`;
+          }
         }
 
         const finBody = document.getElementById('financeReportBody');
@@ -3238,13 +3377,27 @@ function doPost(e) {
 
         const periodDocs = docs.filter(d => matchesPeriodPrefix(d, prefix));
 
+        function formatReportDateDmy(doc) {
+          const iso = getDocIsoDate(doc);
+          const m = iso && iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+          return doc?.docDate || '';
+        }
+
         if (currentReportTab === 'finance') {
           if (finBody) finBody.style.display = 'block';
           if (techBody) techBody.style.display = 'none';
 
-          let sumTotalKip = 0;
+          let sumMonthKip = 0;
+          let sumYearKip = 0;
           let sumDepositKip = 0;
           let sumBalanceKip = 0;
+
+          const yearDocs = docs.filter(d => matchesPeriodPrefix(d, String(now.getFullYear())));
+          yearDocs.forEach(d => {
+            const { total } = computeDocTotals(d);
+            sumYearKip += toKipAmount(total, d.currency || '₭', d.exchangeRate);
+          });
 
           periodDocs.forEach(d => {
             const { total, deposit } = computeDocTotals(d);
@@ -3256,57 +3409,78 @@ function doPost(e) {
             const depKip = toKipAmount(deposit, depCurr, rate);
             const balKip = totKip - depKip;
 
-            sumTotalKip += totKip;
+            sumMonthKip += totKip;
             sumDepositKip += depKip;
             if (balKip > 0) sumBalanceKip += balKip;
           });
 
-          const rowsHtml = periodDocs.length
-            ? periodDocs.map(d => {
-                const { total } = computeDocTotals(d);
+          const listHtml = periodDocs.length
+            ? periodDocs.map((d, idx) => {
+                const { total, deposit } = computeDocTotals(d);
                 const curr = d.currency || '₭';
+                const depCurr = d.depositCurrency || curr;
+                const rate = parseNum(d.exchangeRate);
+                const totKip = toKipAmount(total, curr, rate);
+                const depKip = toKipAmount(deposit, depCurr, rate);
+                const balKip = totKip - depKip;
+
+                const typeLabel = d.docType === 'repair' ? 'ໃບຮັບສ້ອມ' : 'ໃບຮັບເງິນ';
+                const itemNames = Array.isArray(d.items) && d.items.length
+                  ? d.items.map(it => it.name).filter(Boolean).join(', ') || '-'
+                  : '-';
+
+                const machineParts = [];
+                if (d.deviceModel) machineParts.push(`ເຄື່ອງ: ${escapeHtml(d.deviceModel)}`);
+                if (d.serialNo) machineParts.push(`S/N: ${escapeHtml(d.serialNo)}`);
+                machineParts.push(`ລາຍການ: ${escapeHtml(itemNames)}`);
+
+                const extraParts = [
+                  `ມັດຈຳ: <span class="en-num">${escapeHtml(formatMoney(depKip, '₭'))}</span>`,
+                  `ຄ້າງຊຳລະ: <span class="en-num" style="color:${balKip > 0 ? 'var(--danger)' : 'var(--primary)'};font-weight:700;">${escapeHtml(formatMoney(balKip, '₭'))}</span>`
+                ];
+                if (d.techName) {
+                  extraParts.push(`ຊ່າງ: ${escapeHtml(d.techName)}`);
+                }
+
                 return `
-                  <tr>
-                    <td class="en-num">${escapeHtml(d.docNo || d.id)}</td>
-                    <td class="en-num">${escapeHtml(getDocIsoDate(d) || d.docDate || '')}</td>
-                    <td>${escapeHtml(d.custName || '')}</td>
-                    <td class="en-num" style="text-align:right;font-weight:700;">${formatMoney(total, curr)}</td>
-                  </tr>
+                  <div class="report-entry-item">
+                    <div class="report-entry-top">
+                      <span class="en-num">${idx + 1}. [${escapeHtml(d.docNo || d.id)}] ${escapeHtml(d.custName || 'ລູກຄ້າທົ່ວໄປ')} (${escapeHtml(typeLabel)})</span>
+                      <span class="report-entry-amt en-num">${escapeHtml(formatMoney(totKip, '₭'))}</span>
+                    </div>
+                    <div class="report-entry-meta">
+                      ວັນທີ: <span class="en-num">${escapeHtml(formatReportDateDmy(d))}</span> • ${machineParts.join(' / ')}
+                    </div>
+                    <div class="report-entry-meta">
+                      ${extraParts.join(' • ')}
+                    </div>
+                  </div>
                 `;
               }).join('')
-            : `<tr><td colspan="4" class="empty-state" style="padding:12px;">ບໍ່ມີຂໍ້ມູນໃນຊ່ວງເວລານີ້</td></tr>`;
+            : `<div class="empty-state" style="padding:14px;">ບໍ່ມີຂໍ້ມູນໃນຊ່ວງເວລານີ້</div>`;
 
           if (finBody) {
             finBody.innerHTML = `
               <div class="summary-grid">
                 <div class="stat-box green">
-                  <div class="stat-label">ຍອດລວມ (₭)</div>
-                  <div class="stat-val en-num">${formatMoney(sumTotalKip, '₭')}</div>
+                  <div class="stat-label">${pType === 'month' ? 'ຍອດໃນເດືອນ' : 'ຍອດໃນປີ'}</div>
+                  <div class="stat-val en-num">${formatMoney(sumMonthKip, '₭')}</div>
                 </div>
                 <div class="stat-box gold">
-                  <div class="stat-label">ມັດຈຳ (₭)</div>
+                  <div class="stat-label">ຍອດມັດຈຳ</div>
                   <div class="stat-val en-num">${formatMoney(sumDepositKip, '₭')}</div>
                 </div>
                 <div class="stat-box red">
-                  <div class="stat-label">ຄ້າງຊຳລະ (₭)</div>
+                  <div class="stat-label">ຍອດຄ້າງຊຳລະ</div>
                   <div class="stat-val en-num">${formatMoney(sumBalanceKip, '₭')}</div>
                 </div>
                 <div class="stat-box blue">
-                  <div class="stat-label">ຈຳນວນເອກະສານ</div>
-                  <div class="stat-val en-num">${periodDocs.length} ບິນ</div>
+                  <div class="stat-label">ຍອດລວມທັງປີ</div>
+                  <div class="stat-val en-num">${formatMoney(sumYearKip, '₭')}</div>
                 </div>
               </div>
-              <table class="bill-table">
-                <thead>
-                  <tr>
-                    <th>ເລກທີ</th>
-                    <th>ວັນທີ</th>
-                    <th>ລູກຄ້າ</th>
-                    <th style="text-align:right;">ຍອດລວມ</th>
-                  </tr>
-                </thead>
-                <tbody>${rowsHtml}</tbody>
-              </table>
+              <div class="report-list-heading">ລາຍການບັນທຶກທີ່ມີຢູ່ໃນລະບົບ:</div>
+              <div>${listHtml}</div>
             `;
           }
         } else {
@@ -3320,49 +3494,73 @@ function doPost(e) {
           });
 
           let techTotalKip = 0;
+          let techDepositKip = 0;
+          let techBalanceKip = 0;
           techFiltered.forEach(d => {
-            const { total } = computeDocTotals(d);
-            techTotalKip += toKipAmount(total, d.currency || '₭', d.exchangeRate);
+            const { total, deposit } = computeDocTotals(d);
+            const curr = d.currency || '₭';
+            const depCurr = d.depositCurrency || curr;
+            const rate = parseNum(d.exchangeRate);
+            const totKip = toKipAmount(total, curr, rate);
+            const depKip = toKipAmount(deposit, depCurr, rate);
+            const balKip = totKip - depKip;
+            techTotalKip += totKip;
+            techDepositKip += depKip;
+            if (balKip > 0) techBalanceKip += balKip;
           });
 
-          const tRows = techFiltered.length
-            ? techFiltered.map(d => {
-                const { total } = computeDocTotals(d);
+          const tListHtml = techFiltered.length
+            ? techFiltered.map((d, idx) => {
+                const { total, deposit } = computeDocTotals(d);
                 const curr = d.currency || '₭';
+                const depCurr = d.depositCurrency || curr;
+                const rate = parseNum(d.exchangeRate);
+                const totKip = toKipAmount(total, curr, rate);
+                const depKip = toKipAmount(deposit, depCurr, rate);
+                const balKip = totKip - depKip;
+                const itemNames = Array.isArray(d.items) && d.items.length
+                  ? d.items.map(it => it.name).filter(Boolean).join(', ') || '-'
+                  : '-';
+
                 return `
-                  <tr>
-                    <td class="en-num">${escapeHtml(d.docNo || d.id)}</td>
-                    <td>${escapeHtml(d.techName || '-')}</td>
-                    <td>${escapeHtml(d.deviceModel || d.custName || '-')}</td>
-                    <td class="en-num" style="text-align:right;font-weight:700;">${formatMoney(total, curr)}</td>
-                  </tr>
+                  <div class="report-entry-item">
+                    <div class="report-entry-top">
+                      <span class="en-num">${idx + 1}. [${escapeHtml(d.docNo || d.id)}] ${escapeHtml(d.custName || 'ລູກຄ້າທົ່ວໄປ')} (ຊ່າງ: ${escapeHtml(d.techName || '-')})</span>
+                      <span class="report-entry-amt en-num">${escapeHtml(formatMoney(totKip, '₭'))}</span>
+                    </div>
+                    <div class="report-entry-meta">
+                      ວັນທີ: <span class="en-num">${escapeHtml(formatReportDateDmy(d))}</span>${d.deviceModel ? ` • ເຄື່ອງ: ${escapeHtml(d.deviceModel)}` : ''}${d.serialNo ? ` / S/N: ${escapeHtml(d.serialNo)}` : ''} • ລາຍການ: ${escapeHtml(itemNames)}
+                    </div>
+                    <div class="report-entry-meta">
+                      ມັດຈຳ: <span class="en-num">${escapeHtml(formatMoney(depKip, '₭'))}</span> • ຄ້າງຊຳລະ: <span class="en-num" style="color:${balKip > 0 ? 'var(--danger)' : 'var(--primary)'};font-weight:700;">${escapeHtml(formatMoney(balKip, '₭'))}</span>
+                    </div>
+                  </div>
                 `;
               }).join('')
-            : `<tr><td colspan="4" class="empty-state" style="padding:12px;">ບໍ່ມີຜົນງານຊ່າງໃນຊ່ວງເວລານີ້</td></tr>`;
+            : `<div class="empty-state" style="padding:14px;">ບໍ່ມີຜົນງານຊ່າງໃນຊ່ວງເວລານີ້</div>`;
 
           if (techBody) {
             techBody.innerHTML = `
               <div class="summary-grid">
                 <div class="stat-box green">
-                  <div class="stat-label">ຍອດຜົນງານຊ່າງ (₭)</div>
+                  <div class="stat-label">ຍອດຜົນງານຊ່າງ</div>
                   <div class="stat-val en-num">${formatMoney(techTotalKip, '₭')}</div>
+                </div>
+                <div class="stat-box gold">
+                  <div class="stat-label">ຍອດມັດຈຳ</div>
+                  <div class="stat-val en-num">${formatMoney(techDepositKip, '₭')}</div>
+                </div>
+                <div class="stat-box red">
+                  <div class="stat-label">ຍອດຄ້າງຊຳລະ</div>
+                  <div class="stat-val en-num">${formatMoney(techBalanceKip, '₭')}</div>
                 </div>
                 <div class="stat-box blue">
                   <div class="stat-label">ຈຳນວນວຽກສ້ອມ</div>
                   <div class="stat-val en-num">${techFiltered.length} ງານ</div>
                 </div>
               </div>
-              <table class="bill-table">
-                <thead>
-                  <tr>
-                    <th>ເລກທີ</th>
-                    <th>ຊື່ຊ່າງ</th>
-                    <th>ອຸປະກອນ/ລູກຄ້າ</th>
-                    <th style="text-align:right;">ມູນຄ່າ</th>
-                  </tr>
-                </thead>
-                <tbody>${tRows}</tbody>
-              </table>
+              <div class="report-list-heading">ລາຍການບັນທຶກທີ່ມີຢູ່ໃນລະບົບ:</div>
+              <div>${tListHtml}</div>
             `;
           }
         }
